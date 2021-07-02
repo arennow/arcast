@@ -1,5 +1,5 @@
-mod download;
-pub use download::*;
+mod downloaders;
+pub use downloaders::*;
 
 mod error;
 mod heap_buffer;
