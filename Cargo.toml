@@ -8,3 +8,4 @@ edition = "2018"
 [dependencies]
 ureq = "2.1.1"
 thiserror = "1.0"
+rss = "1.0"

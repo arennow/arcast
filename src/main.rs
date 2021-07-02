@@ -1,11 +1,21 @@
 mod download;
+mod feed;
+
+use std::error::Error;
+
+fn do_work() -> Result<(), Box<dyn Error>> {
+	let reader = download::download_to_reader("https://feeds.fireside.fm/worldsgreatestcon/rss")?;
+	let items = feed::items_from_reader(reader)?;
+
+	for item in items {
+		println!("{}", item.title().unwrap_or("NO TITLE"));
+	}
+
+	Ok(())
+}
 
 fn main() {
-	let mut args = std::env::args().skip(1);
-	let source_url = args.next().unwrap();
-	let dest_path = args.next().unwrap();
-
-	if let Err(e) = download::download_to_file(&source_url, dest_path) {
+	if let Err(e) = do_work() {
 		eprintln!("Error: {}", e);
 	}
 }

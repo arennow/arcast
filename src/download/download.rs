@@ -4,12 +4,16 @@ use std::path::Path;
 use super::error::*;
 use super::heap_buffer::*;
 
+pub fn download_to_reader(source_url: &str) -> Result<impl Read, DownloadError> {
+	Ok(ureq::get(source_url).call()?.into_reader())
+}
+
 pub fn download_to_file<P: AsRef<Path>>(
 	source_url: &str,
 	dest_path: P,
 ) -> Result<usize, DownloadError> {
 	let dest_path = dest_path.as_ref();
-	let mut downloader = ureq::get(source_url).call()?.into_reader();
+	let mut downloader = download_to_reader(source_url)?;
 
 	let mut file = std::fs::File::create(&dest_path)
 		.map_err(|e| DownloadError::from_io_error(e, dest_path.to_string_lossy()))?;
