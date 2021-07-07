@@ -1,14 +1,12 @@
 mod download;
 mod feed;
 
-use std::error::Error;
-
-fn do_work() -> Result<(), Box<dyn Error>> {
-	let reader = download::download_to_reader("https://feeds.fireside.fm/worldsgreatestcon/rss")?;
+fn do_work() -> Result<(), Box<dyn std::error::Error>> {
+	let reader = download::download_to_reader("https://newrustacean.com/feed.xml")?;
 	let items = feed::items_from_reader(reader)?;
 
 	for item in items {
-		println!("{}", item.title().unwrap_or("NO TITLE"));
+		println!("{}", item.filename());
 	}
 
 	Ok(())

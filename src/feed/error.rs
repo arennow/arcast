@@ -1,7 +1,16 @@
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-pub enum Error {
+pub enum ParsingError {
 	#[error(transparent)]
-	Parsing(#[from] rss::Error),
+	Document(#[from] rss::Error),
+
+	#[error("episode missing title")]
+	EpisodeTitleMissing,
+
+	#[error("episode missing pubDate")]
+	EpisodePubDateMissing,
+
+	#[error(transparent)]
+	EpisodePubDate(#[from] chrono::ParseError),
 }
