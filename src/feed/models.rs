@@ -18,6 +18,7 @@ pub struct Episode {
 	show: Rc<Show>,
 	title: String,
 	pub_date: DateTime<FixedOffset>,
+	enclosure_url: String,
 }
 
 impl Episode {
@@ -32,10 +33,17 @@ impl Episode {
 			.ok_or(ParsingError::EpisodePubDateMissing)?;
 		let pub_date = DateTime::parse_from_rfc2822(string_pub_date)?;
 
+		let enclosure_url = rss_item
+			.enclosure()
+			.ok_or(ParsingError::EpisodeEnclosureURLMissing)?
+			.url()
+			.into();
+
 		Ok(Episode {
 			show,
 			title,
 			pub_date,
+			enclosure_url,
 		})
 	}
 
@@ -55,7 +63,7 @@ impl Episode {
 }
 
 impl Episode {
-	pub fn title(&self) -> &str {
-		&self.title
+	pub fn enclosure_url(&self) -> &str {
+		&self.enclosure_url
 	}
 }

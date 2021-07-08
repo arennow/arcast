@@ -13,4 +13,7 @@ pub enum ParsingError {
 
 	#[error(transparent)]
 	EpisodePubDate(#[from] chrono::ParseError),
+
+	#[error("episode missing URL")]
+	EpisodeEnclosureURLMissing,
 }

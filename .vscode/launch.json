@@ -19,7 +19,7 @@
 					"kind": "bin"
 				}
 			},
-			"args": [],
+			"args": ["-d", "/Users/aaron/Downloads/nr"],
 			"cwd": "${workspaceFolder}"
 		},
 		{
