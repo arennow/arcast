@@ -18,7 +18,7 @@ fn missing_episodes_from_set(
 pub fn missing_episodes<'a>(
 	all_episodes: &'a [Episode],
 	config: &Config,
-) -> std::io::Result<impl DoubleEndedIterator<Item = &'a Episode>> {
+) -> Result<impl DoubleEndedIterator<Item = &'a Episode>, filesystem::FilesystemError> {
 	let existing_files = filesystem::list_files(config.destination())?;
 	let filtered_eps = missing_episodes_from_set(all_episodes, existing_files);
 
