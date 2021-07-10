@@ -1,5 +1,6 @@
 use super::error::*;
 use chrono::prelude::*;
+use std::cell::RefCell;
 use std::rc::Rc;
 
 pub struct Show {
@@ -19,6 +20,7 @@ pub struct Episode {
 	title: String,
 	pub_date: DateTime<FixedOffset>,
 	enclosure_url: String,
+	cached_filename: RefCell<Option<Rc<String>>>,
 }
 
 impl Episode {
@@ -44,16 +46,26 @@ impl Episode {
 			title,
 			pub_date,
 			enclosure_url,
+			cached_filename: Default::default(),
 		})
 	}
 
-	pub fn filename(&self) -> String {
-		format!(
+	pub fn filename(&self) -> Rc<String> {
+		if let Some(existing) = &*self.cached_filename.borrow() {
+			return Rc::clone(existing);
+		}
+
+		let new = format!(
 			"{} - {} - {}.mp3",
 			self.show.title,
 			Self::formatted_string_for_date(&self.pub_date),
 			self.title
-		)
+		);
+		let new = Rc::new(new);
+
+		self.cached_filename.replace(Some(Rc::clone(&new)));
+
+		new
 	}
 
 	fn formatted_string_for_date(date: &DateTime<FixedOffset>) -> impl std::fmt::Display {

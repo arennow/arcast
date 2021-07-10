@@ -27,7 +27,7 @@ fn classified_episodes_from_set(
 		.iter()
 		.map(move |episode| {
 			use EpisodeStatus::*;
-			let contains = existing_files.contains(&episode.filename());
+			let contains = existing_files.contains(&*episode.filename());
 			let status = if contains { Have } else { Need };
 
 			ClassifiedEpisode { status, episode }

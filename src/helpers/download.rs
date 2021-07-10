@@ -6,7 +6,7 @@ use std::io::Write;
 
 pub fn download_episode(episode: &Episode, config: &Config) -> Result<(), Box<dyn Error>> {
 	let mut file_dest_path = config.destination().to_path_buf();
-	file_dest_path.push(episode.filename());
+	file_dest_path.push(&*episode.filename());
 
 	print!("{}… ", episode.filename());
 	std::io::stdout().flush()?;
