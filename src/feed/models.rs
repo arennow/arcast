@@ -1,13 +1,18 @@
 use super::error::*;
 use chrono::prelude::*;
 use serde::Deserialize;
+use std::borrow::Cow;
 use std::cell::RefCell;
 use std::rc::Rc;
 
 #[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct Show {
 	title: String,
 	url: String,
+
+	#[serde(default)]
+	title_strip_patterns: Vec<String>,
 }
 
 impl Show {
@@ -56,17 +61,31 @@ impl Episode {
 			return Rc::clone(existing);
 		}
 
-		let new = format!(
-			"{} - {} - {}.mp3",
-			self.show.title,
-			Self::formatted_string_for_date(&self.pub_date),
-			self.title
-		);
-		let new = Rc::new(new);
-
+		let new = Rc::new(self.generate_filename());
 		self.cached_filename.replace(Some(Rc::clone(&new)));
 
 		new
+	}
+
+	fn generate_filename(&self) -> String {
+		format!(
+			"{} - {} - {}.mp3",
+			self.show.title,
+			Self::formatted_string_for_date(&self.pub_date),
+			self.process_raw_title()
+		)
+	}
+
+	fn process_raw_title(&self) -> String {
+		let processed_title = self.show.title_strip_patterns.iter().fold(
+			Cow::Borrowed(&self.title[..]),
+			|title, raw_patt| {
+				let reg = regex::Regex::new(raw_patt).expect("Bad regex");
+				Cow::Owned(reg.replace_all(&title, "").into_owned())
+			},
+		);
+
+		processed_title.to_string()
 	}
 
 	fn formatted_string_for_date(date: &DateTime<FixedOffset>) -> impl std::fmt::Display {

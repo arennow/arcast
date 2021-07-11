@@ -15,8 +15,6 @@ fn do_work() -> Result<(), Box<dyn std::error::Error>> {
 	}?;
 	let show = Rc::new(show);
 
-	dbg!(&show);
-
 	let reader = download::download_to_reader(show.url())?;
 	let episodes = feed::episodes_from_reader(reader, show)?;
 	let classified_eps = helpers::classified_episodes(&episodes, &config)?;
