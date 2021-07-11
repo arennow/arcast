@@ -1,17 +1,18 @@
 use super::error::*;
 use chrono::prelude::*;
+use serde::Deserialize;
 use std::cell::RefCell;
 use std::rc::Rc;
 
+#[derive(Deserialize, Debug)]
 pub struct Show {
 	title: String,
+	url: String,
 }
 
 impl Show {
-	pub fn new<S: Into<String>>(title: S) -> Self {
-		let title = title.into();
-
-		Show { title }
+	pub fn url(&self) -> &str {
+		&self.url
 	}
 }
 

@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 //    -p	Pretend (don't download anything)
 //done-e	Show existing files
 //done-n	Limit number of episodes
-//    -c	Path to configuration file
+//done-c	Path to configuration file
 //done-d	Download directory path
 
 #[derive(Debug, StructOpt)]
@@ -15,6 +15,10 @@ pub struct Config {
 	/// Download directory path
 	#[structopt(short, long)]
 	destination: PathBuf,
+
+	/// Path to configuration file
+	#[structopt(short, long)]
+	config_file_path: PathBuf,
 
 	/// Print existing episodes
 	#[structopt(short = "e", long)]
@@ -28,6 +32,10 @@ pub struct Config {
 impl Config {
 	pub fn destination(&self) -> &Path {
 		&self.destination
+	}
+
+	pub fn config_file_path(&self) -> &Path {
+		&self.config_file_path
 	}
 
 	pub fn print_existing_episodes(&self) -> bool {
