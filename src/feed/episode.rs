@@ -1,25 +1,9 @@
 use super::error::*;
+use super::Show;
 use chrono::prelude::*;
-use serde::Deserialize;
 use std::borrow::Cow;
 use std::cell::RefCell;
 use std::rc::Rc;
-
-#[derive(Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct Show {
-	title: String,
-	url: String,
-
-	#[serde(default)]
-	title_strip_patterns: Vec<String>,
-}
-
-impl Show {
-	pub fn url(&self) -> &str {
-		&self.url
-	}
-}
 
 pub struct Episode {
 	show: Rc<Show>,
@@ -70,14 +54,14 @@ impl Episode {
 	fn generate_filename(&self) -> String {
 		format!(
 			"{} - {} - {}.mp3",
-			self.show.title,
+			self.show.title(),
 			Self::formatted_string_for_date(&self.pub_date),
 			self.process_raw_title()
 		)
 	}
 
 	fn process_raw_title(&self) -> String {
-		let processed_title = self.show.title_strip_patterns.iter().fold(
+		let processed_title = self.show.title_strip_patterns().iter().fold(
 			Cow::Borrowed(&self.title[..]),
 			|title, raw_patt| {
 				let reg = regex::Regex::new(raw_patt).expect("Bad regex");

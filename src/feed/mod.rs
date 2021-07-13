@@ -3,5 +3,8 @@ mod error;
 mod parsing;
 pub use parsing::*;
 
-mod models;
-pub use models::*;
+mod episode;
+pub use episode::*;
+
+mod show;
+pub use show::*;
