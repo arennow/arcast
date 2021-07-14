@@ -1,7 +1,6 @@
 use super::error::*;
 use super::Show;
 use chrono::prelude::*;
-use std::borrow::Cow;
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -63,15 +62,31 @@ impl Episode {
 	}
 
 	fn process_raw_title(&self) -> String {
-		let processed_title = self.show.title_strip_patterns().iter().fold(
-			Cow::Borrowed(&self.title[..]),
-			|title, raw_patt| {
-				let reg = regex::Regex::new(raw_patt).expect("Bad regex");
-				Cow::Owned(reg.replace_all(&title, "").into_owned())
-			},
-		);
+		let default_patterns = [
+			format!(r#"{}[:\s]+"#, self.show.title()),
+			r#"^\s+|\s+$"#.into(),
+		];
 
-		processed_title.to_string()
+		let strip_patterns = default_patterns
+			.iter()
+			.chain(self.show.title_strip_patterns().iter());
+
+		let mut processed_title: String =
+			strip_patterns.fold(self.title.clone(), |title, raw_patt| {
+				let reg = regex::Regex::new(raw_patt).expect("Bad regex");
+				reg.replace_all(&title, "").into_owned()
+			});
+
+		unsafe {
+			// This unsafe is safe because these two chars are the same length
+			for byte in processed_title.as_bytes_mut().iter_mut() {
+				if *byte == b'/' {
+					*byte = b'-';
+				}
+			}
+		}
+
+		processed_title
 	}
 
 	fn formatted_string_for_date(date: &DateTime<FixedOffset>) -> impl std::fmt::Display {
@@ -117,9 +132,18 @@ mod tests {
 	}
 
 	#[test]
-	fn test_basic_regex_stripping() {
-		let show = new_show(vec![r#"^FS\s+"#, r#"\s+-\s+LIVE EPISODE$"#]);
-		let ep = new_episode(show, "FS 666: We fought the devil - LIVE EPISODE");
+	fn test_basic_stripping() {
+		let show = new_show(vec![]);
+		let ep = new_episode(show, "FAKESHOW 666: We fought the devil - LIVE EPISODE ");
+		let raw_title = ep.process_raw_title();
+
+		assert_eq!(raw_title, "666: We fought the devil - LIVE EPISODE")
+	}
+
+	#[test]
+	fn test_regex_stripping() {
+		let show = new_show(vec![r#"\s+-\s+LIVE EPISODE$"#]);
+		let ep = new_episode(show, "FAKESHOW 666: We fought the devil - LIVE EPISODE");
 		let raw_title = ep.process_raw_title();
 
 		assert_eq!(raw_title, "666: We fought the devil")

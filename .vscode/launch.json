@@ -20,8 +20,9 @@
 				}
 			},
 			"args": [
-				"-d", "/Users/aaron/Downloads/npr",
-				"-c", "/Users/aaron/Downloads/npr/arcast.json"
+				"-d", "/Users/aaron/Downloads/gb",
+				"-c", "/Users/aaron/Downloads/gb/arcast.json",
+				"-n5"
 			],
 			"cwd": "${workspaceFolder}"
 		},
