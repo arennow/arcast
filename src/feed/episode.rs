@@ -5,6 +5,8 @@ use std::borrow::Cow;
 use std::cell::RefCell;
 use std::rc::Rc;
 
+#[derive(Builder)]
+#[builder(setter(into))]
 pub struct Episode {
 	show: Rc<Show>,
 	title: String,
@@ -81,5 +83,45 @@ impl Episode {
 impl Episode {
 	pub fn enclosure_url(&self) -> &str {
 		&self.enclosure_url
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::super::ShowBuilder;
+	use super::*;
+
+	fn new_show(strip_patterns: Vec<&str>) -> Show {
+		ShowBuilder::default()
+			.title("FAKESHOW")
+			.url("http://example.com/feed.rss")
+			.title_strip_patterns(
+				strip_patterns
+					.into_iter()
+					.map(|s| s.into())
+					.collect::<Vec<String>>(),
+			)
+			.build()
+			.unwrap()
+	}
+
+	fn new_episode(show: Show, title: &str) -> Episode {
+		EpisodeBuilder::default()
+			.show(Rc::new(show))
+			.title(title)
+			.pub_date(Local::now())
+			.enclosure_url("http://example.com/ep.mp3")
+			.cached_filename(RefCell::default())
+			.build()
+			.unwrap()
+	}
+
+	#[test]
+	fn test_basic_regex_stripping() {
+		let show = new_show(vec![r#"^FS\s+"#, r#"\s+-\s+LIVE EPISODE$"#]);
+		let ep = new_episode(show, "FS 666: We fought the devil - LIVE EPISODE");
+		let raw_title = ep.process_raw_title();
+
+		assert_eq!(raw_title, "666: We fought the devil")
 	}
 }

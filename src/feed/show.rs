@@ -1,6 +1,7 @@
 use serde::Deserialize;
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Builder)]
+#[builder(setter(into))]
 #[serde(rename_all = "camelCase")]
 pub struct Show {
 	title: String,
