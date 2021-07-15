@@ -1,8 +1,13 @@
 use super::error::*;
 use super::Show;
 use chrono::prelude::*;
+use regex::Regex;
 use std::cell::RefCell;
 use std::rc::Rc;
+
+lazy_static! {
+	static ref EDGE_TRIM_REGEX: Regex = Regex::new(r#"^\s+|\s+$"#).unwrap();
+}
 
 #[derive(Builder)]
 #[builder(setter(into))]
@@ -62,20 +67,20 @@ impl Episode {
 	}
 
 	fn process_raw_title(&self) -> String {
-		let default_patterns = [
-			format!(r#"{}[:\s]+"#, self.show.title()),
-			r#"^\s+|\s+$"#.into(),
-		];
+		use std::iter::once;
 
-		let strip_patterns = default_patterns
-			.iter()
-			.chain(self.show.title_strip_patterns().iter());
+		let regex_cont = self.show.regex_container();
 
-		let mut processed_title: String =
-			strip_patterns.fold(self.title.clone(), |title, raw_patt| {
-				let reg = regex::Regex::new(raw_patt).expect("Bad regex");
-				reg.replace_all(&title, "").into_owned()
-			});
+		// This bizarreness brought to you by the fact that [T; 2]'s iterator yields &T, but Map<T, _> yields T
+		let default_patterns =
+			once(regex_cont.leading_show_title_strip()).chain(once(&*EDGE_TRIM_REGEX));
+		let custom_patterns = regex_cont.custom_episode_title_strips().iter();
+
+		let strip_patterns = default_patterns.chain(custom_patterns);
+
+		let mut processed_title: String = strip_patterns.fold(self.title.clone(), |title, reg| {
+			reg.replace_all(&title, "").into_owned()
+		});
 
 		unsafe {
 			// This unsafe is safe because these two chars are the same length
@@ -116,6 +121,7 @@ mod tests {
 					.map(|s| s.into())
 					.collect::<Vec<String>>(),
 			)
+			.regex_container(RefCell::default())
 			.build()
 			.unwrap()
 	}
