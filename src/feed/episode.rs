@@ -1,6 +1,7 @@
 use super::error::*;
 use super::Show;
 use chrono::prelude::*;
+use derive_getters::Getters;
 use regex::Regex;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -9,7 +10,7 @@ lazy_static! {
 	static ref EDGE_TRIM_REGEX: Regex = Regex::new(r#"^\s+|\s+$"#).unwrap();
 }
 
-#[derive(Builder)]
+#[derive(Builder, Getters)]
 #[builder(setter(into))]
 pub struct Episode {
 	show: Rc<Show>,
@@ -97,12 +98,6 @@ impl Episode {
 	fn formatted_string_for_date(date: &DateTime<FixedOffset>) -> impl std::fmt::Display {
 		date.format("%F")
 		// Year-month-day format (ISO 8601). Same as %Y-%m-%d. (https://docs.rs/chrono/0.4.19/chrono/format/strftime/index.html)
-	}
-}
-
-impl Episode {
-	pub fn enclosure_url(&self) -> &str {
-		&self.enclosure_url
 	}
 }
 

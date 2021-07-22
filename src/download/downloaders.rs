@@ -4,28 +4,50 @@ use crate::filesystem::FilesystemError;
 use std::io::{BufWriter, Read, Write};
 use std::path::Path;
 
-pub fn download_to_reader(source_url: &str) -> Result<impl Read, DownloadError> {
-	Ok(ureq::get(source_url).call()?.into_reader())
+pub fn download_to_reader(source_url: &str) -> Result<(impl Read, Option<usize>), DownloadError> {
+	let resp = ureq::get(source_url).call()?;
+	let content_length = resp
+		.header("Content-Length")
+		.map(|s| s.parse().ok())
+		.flatten();
+	Ok((resp.into_reader(), content_length))
 }
 
-pub fn download_to_file<P: AsRef<Path>>(
+pub fn download_to_file<P: AsRef<Path>, PF>(
 	source_url: &str,
 	dest_path: P,
-) -> Result<usize, DownloadError> {
+	mut progress_func: PF,
+) -> Result<usize, DownloadError>
+where
+	PF: FnMut(f64),
+{
 	let dest_path = dest_path.as_ref();
-	let mut downloader = download_to_reader(source_url)?;
+	let (mut downloader, content_length) = download_to_reader(source_url)?;
 
 	let mut file = std::fs::File::create(&dest_path)
 		.map_err(|e| FilesystemError::from_io_error(e, dest_path.to_string_lossy()))?;
 
-	pipe(&mut downloader, &mut file, dest_path.to_string_lossy())
+	fn us_div(num: usize, den: Option<usize>) -> f64 {
+		den.map(|d| (num as f64) / (d as f64)).unwrap_or_default()
+	}
+
+	pipe(
+		&mut downloader,
+		&mut file,
+		dest_path.to_string_lossy(),
+		|cur| progress_func(us_div(cur, content_length)),
+	)
 }
 
-fn pipe<R: Read, W: Write, S: Into<String>>(
+fn pipe<R: Read, W: Write, S: Into<String>, PF>(
 	source: &mut R,
 	dest: &mut W,
 	dest_name: S,
-) -> Result<usize, DownloadError> {
+	mut progress_func: PF,
+) -> Result<usize, DownloadError>
+where
+	PF: FnMut(usize),
+{
 	let mut dest = BufWriter::new(dest);
 	let mut bytes_written = 0;
 	let mut buf = HeapBuffer::<{ 1024 * 8 }>::new();
@@ -39,8 +61,9 @@ fn pipe<R: Read, W: Write, S: Into<String>>(
 				break;
 			}
 			dest.write_all(&buf[..bytes_read])?;
-
 			bytes_written += bytes_read;
+
+			progress_func(bytes_written);
 		}
 
 		dest.flush()?;
