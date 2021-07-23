@@ -1,9 +1,9 @@
 use super::error::*;
 use super::Show;
+use crate::cache::Cache;
 use chrono::prelude::*;
 use derive_getters::Getters;
 use regex::Regex;
-use std::cell::RefCell;
 use std::rc::Rc;
 
 lazy_static! {
@@ -17,7 +17,7 @@ pub struct Episode {
 	title: String,
 	pub_date: DateTime<FixedOffset>,
 	enclosure_url: String,
-	cached_filename: RefCell<Option<Rc<String>>>,
+	cached_filename: Cache<String>,
 }
 
 impl Episode {
@@ -48,14 +48,7 @@ impl Episode {
 	}
 
 	pub fn filename(&self) -> Rc<String> {
-		if let Some(existing) = &*self.cached_filename.borrow() {
-			return Rc::clone(existing);
-		}
-
-		let new = Rc::new(self.generate_filename());
-		self.cached_filename.replace(Some(Rc::clone(&new)));
-
-		new
+		self.cached_filename.get(|| self.generate_filename())
 	}
 
 	fn generate_filename(&self) -> String {
@@ -116,7 +109,7 @@ mod tests {
 					.map(|s| s.into())
 					.collect::<Vec<String>>(),
 			)
-			.regex_container(RefCell::default())
+			.regex_container(Cache::default())
 			.build()
 			.unwrap()
 	}
@@ -127,7 +120,7 @@ mod tests {
 			.title(title)
 			.pub_date(Local::now())
 			.enclosure_url("http://example.com/ep.mp3")
-			.cached_filename(RefCell::default())
+			.cached_filename(Cache::default())
 			.build()
 			.unwrap()
 	}

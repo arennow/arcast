@@ -1,6 +1,6 @@
+use crate::cache::Cache;
 use regex::Regex;
 use serde::Deserialize;
-use std::cell::RefCell;
 use std::rc::Rc;
 
 #[derive(Deserialize, Debug, Builder)]
@@ -14,7 +14,7 @@ pub struct Show {
 	title_strip_patterns: Vec<String>,
 
 	#[serde(skip, default)]
-	regex_container: RefCell<Option<Rc<RegexContainer>>>,
+	regex_container: Cache<RegexContainer>,
 }
 
 impl Show {
@@ -27,19 +27,7 @@ impl Show {
 	}
 
 	pub fn regex_container(&self) -> Rc<RegexContainer> {
-		let reference = self.regex_container.borrow();
-
-		if let Some(container) = &*reference {
-			return Rc::clone(container);
-		}
-		drop(reference);
-
-		let new_container = Rc::new(RegexContainer::from(self));
-
-		self.regex_container
-			.replace(Some(Rc::clone(&new_container)));
-
-		new_container
+		self.regex_container.get(|| RegexContainer::from(self))
 	}
 }
 

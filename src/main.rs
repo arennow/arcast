@@ -4,6 +4,7 @@ extern crate derive_builder;
 #[macro_use]
 extern crate lazy_static;
 
+mod cache;
 mod config;
 mod download;
 mod feed;
