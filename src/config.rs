@@ -2,14 +2,6 @@ use structopt::StructOpt;
 
 use std::path::{Path, PathBuf};
 
-// arcast [-h] [-p] [-e] [-n NUM] -c PATH -d PATH
-//done-h	Print help information
-//    -p	Pretend (don't download anything)
-//done-e	Show existing files
-//done-n	Limit number of episodes
-//done-c	Path to configuration file
-//done-d	Download directory path
-
 #[derive(Debug, StructOpt)]
 pub struct Config {
 	/// Download directory path
@@ -19,6 +11,10 @@ pub struct Config {
 	/// Path to configuration file
 	#[structopt(short, long)]
 	config_file_path: PathBuf,
+
+	/// Pretend (don't download anything)
+	#[structopt(short, long)]
+	pretend: bool,
 
 	/// Print existing episodes
 	#[structopt(short = "e", long)]
@@ -36,6 +32,10 @@ impl Config {
 
 	pub fn config_file_path(&self) -> &Path {
 		&self.config_file_path
+	}
+
+	pub fn pretend(&self) -> bool {
+		self.pretend
 	}
 
 	pub fn print_existing_episodes(&self) -> bool {

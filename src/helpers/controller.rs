@@ -20,7 +20,11 @@ pub fn process_classified_episodes<'a>(
 				}
 			}
 			helpers::EpisodeStatus::Need => {
-				helpers::download_episode(episode, &config)?;
+				if config.pretend() {
+					println!("{} would be downloaded", episode.filename());
+				} else {
+					helpers::download_episode(episode, &config)?;
+				}
 				missing_processed += 1;
 			}
 		}
