@@ -15,7 +15,7 @@ pub fn download_episode(episode: &Episode, config: &Config) -> Result<(), Box<dy
 			let mut stdout = termion::cursor::HideCursor::from(std::io::stdout());
 
 			let terminal_width = terminal_size.0 .0;
-			let label = episode.title().clone();
+			let label = episode.filename();
 
 			let mut bar = TitledBar::new(label, terminal_width);
 

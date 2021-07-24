@@ -12,15 +12,14 @@ impl BarSizes {
 	}
 }
 
-pub struct TitledBar {
-	title: String,
+pub struct TitledBar<'a> {
+	title: &'a str,
 	bar: Bar,
 	sizes: BarSizes,
 }
 
-impl TitledBar {
-	pub fn new<S: Into<String>>(title: S, width: u16) -> Self {
-		let title = title.into();
+impl<'a> TitledBar<'a> {
+	pub fn new(title: &'a str, width: u16) -> Self {
 		let sizes = Self::sizes(&title, width);
 
 		let mut bar = Bar::new();
@@ -63,7 +62,7 @@ impl TitledBar {
 	}
 }
 
-impl std::fmt::Display for TitledBar {
+impl<'a> std::fmt::Display for TitledBar<'a> {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
 		let title_width = self.sizes.title as usize;
 		let sub_title = &self.title[..title_width];

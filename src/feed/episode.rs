@@ -1,6 +1,6 @@
 use super::error::*;
+use super::RegexContainer;
 use super::Show;
-use crate::cache::Cache;
 use chrono::prelude::*;
 use derive_getters::Getters;
 use regex::Regex;
@@ -13,19 +13,16 @@ lazy_static! {
 #[derive(Builder, Getters)]
 #[builder(setter(into))]
 pub struct Episode {
-	show: Rc<Show>,
-	title: String,
-	pub_date: NaiveDate,
 	enclosure_url: String,
-	cached_filename: Cache<String>,
+	filename: String,
 }
 
 impl Episode {
-	pub fn new(show: Rc<Show>, rss_item: rss::Item) -> Result<Self, ParsingError> {
-		let title = rss_item
-			.title()
-			.ok_or(ParsingError::EpisodeTitleMissing)?
-			.into();
+	pub fn new(show: &Show, rss_item: rss::Item) -> Result<Self, ParsingError> {
+		let title = Self::process_raw_title(
+			rss_item.title().ok_or(ParsingError::EpisodeTitleMissing)?,
+			show.regex_container(),
+		);
 
 		let string_pub_date = rss_item
 			.pub_date()
@@ -40,32 +37,25 @@ impl Episode {
 			.url()
 			.into();
 
+		let filename = Self::generate_filename(&show, &pub_date, &title);
+
 		Ok(Episode {
-			show,
-			title,
-			pub_date,
 			enclosure_url,
-			cached_filename: Default::default(),
+			filename,
 		})
 	}
 
-	pub fn filename(&self) -> Rc<String> {
-		self.cached_filename.get(|| self.generate_filename())
-	}
-
-	fn generate_filename(&self) -> String {
+	fn generate_filename(show: &Show, pub_date: &NaiveDate, title: &str) -> String {
 		format!(
 			"{} - {} - {}.mp3",
-			self.show.title(),
-			Self::formatted_string_for_date(&self.pub_date),
-			self.process_raw_title()
+			show.title(),
+			Self::formatted_string_for_date(pub_date),
+			title
 		)
 	}
 
-	fn process_raw_title(&self) -> String {
+	fn process_raw_title<S: Into<String>>(raw_title: S, regex_cont: Rc<RegexContainer>) -> String {
 		use std::iter::once;
-
-		let regex_cont = self.show.regex_container();
 
 		// This bizarreness brought to you by the fact that [T; 2]'s iterator yields &T, but Map<T, _> yields T
 		let default_patterns =
@@ -74,7 +64,7 @@ impl Episode {
 
 		let strip_patterns = default_patterns.chain(custom_patterns);
 
-		let mut processed_title: String = strip_patterns.fold(self.title.clone(), |title, reg| {
+		let mut processed_title: String = strip_patterns.fold(raw_title.into(), |title, reg| {
 			reg.replace_all(&title, "").into_owned()
 		});
 
@@ -100,6 +90,7 @@ impl Episode {
 mod tests {
 	use super::super::ShowBuilder;
 	use super::*;
+	use crate::cache::Cache;
 
 	fn new_show(strip_patterns: Vec<&str>) -> Show {
 		ShowBuilder::default()
@@ -116,22 +107,12 @@ mod tests {
 			.unwrap()
 	}
 
-	fn new_episode(show: Show, title: &str) -> Episode {
-		EpisodeBuilder::default()
-			.show(Rc::new(show))
-			.title(title)
-			.pub_date(Local::now().naive_local().date())
-			.enclosure_url("http://example.com/ep.mp3")
-			.cached_filename(Cache::default())
-			.build()
-			.unwrap()
-	}
-
 	#[test]
 	fn test_basic_stripping() {
 		let show = new_show(vec![]);
-		let ep = new_episode(show, "FAKESHOW 666: We fought the devil - LIVE EPISODE ");
-		let raw_title = ep.process_raw_title();
+		let rc = show.regex_container();
+		let raw_title =
+			Episode::process_raw_title("FAKESHOW 666: We fought the devil - LIVE EPISODE ", rc);
 
 		assert_eq!(raw_title, "666: We fought the devil - LIVE EPISODE")
 	}
@@ -139,8 +120,9 @@ mod tests {
 	#[test]
 	fn test_regex_stripping() {
 		let show = new_show(vec![r#"\s+-\s+LIVE EPISODE$"#]);
-		let ep = new_episode(show, "FAKESHOW 666: We fought the devil - LIVE EPISODE");
-		let raw_title = ep.process_raw_title();
+		let rc = show.regex_container();
+		let raw_title =
+			Episode::process_raw_title("FAKESHOW 666: We fought the devil - LIVE EPISODE", rc);
 
 		assert_eq!(raw_title, "666: We fought the devil")
 	}
