@@ -15,7 +15,7 @@ lazy_static! {
 pub struct Episode {
 	show: Rc<Show>,
 	title: String,
-	pub_date: DateTime<FixedOffset>,
+	pub_date: NaiveDate,
 	enclosure_url: String,
 	cached_filename: Cache<String>,
 }
@@ -30,7 +30,9 @@ impl Episode {
 		let string_pub_date = rss_item
 			.pub_date()
 			.ok_or(ParsingError::EpisodePubDateMissing)?;
-		let pub_date = DateTime::parse_from_rfc2822(string_pub_date)?;
+		let pub_date = DateTime::parse_from_rfc2822(string_pub_date)?
+			.naive_local()
+			.date();
 
 		let enclosure_url = rss_item
 			.enclosure()
@@ -88,7 +90,7 @@ impl Episode {
 		processed_title
 	}
 
-	fn formatted_string_for_date(date: &DateTime<FixedOffset>) -> impl std::fmt::Display {
+	fn formatted_string_for_date(date: &NaiveDate) -> impl std::fmt::Display {
 		date.format("%F")
 		// Year-month-day format (ISO 8601). Same as %Y-%m-%d. (https://docs.rs/chrono/0.4.19/chrono/format/strftime/index.html)
 	}
@@ -118,7 +120,7 @@ mod tests {
 		EpisodeBuilder::default()
 			.show(Rc::new(show))
 			.title(title)
-			.pub_date(Local::now())
+			.pub_date(Local::now().naive_local().date())
 			.enclosure_url("http://example.com/ep.mp3")
 			.cached_filename(Cache::default())
 			.build()
