@@ -19,7 +19,7 @@ pub struct Episode {
 
 impl Episode {
 	pub fn new(show: &Show, rss_item: rss::Item) -> Result<Self, ParsingError> {
-		let title = Self::process_raw_title(
+		let mut title = Self::process_raw_title(
 			rss_item.title().ok_or(ParsingError::EpisodeTitleMissing)?,
 			show.regex_container(),
 		);
@@ -27,9 +27,16 @@ impl Episode {
 		let string_pub_date = rss_item
 			.pub_date()
 			.ok_or(ParsingError::EpisodePubDateMissing)?;
-		let pub_date = DateTime::parse_from_rfc2822(string_pub_date)?
+		let mut pub_date = DateTime::parse_from_rfc2822(string_pub_date)?
 			.naive_local()
 			.date();
+
+		if let Some(def) = show.date_extraction_format() {
+			if let Some((date, range)) = def.extract_date(&title) {
+				pub_date = date;
+				title.replace_range(range, "");
+			}
+		}
 
 		let enclosure_url = rss_item
 			.enclosure()
@@ -88,11 +95,11 @@ impl Episode {
 
 #[cfg(test)]
 mod tests {
-	use super::super::ShowBuilder;
+	use super::super::{DateFormat, ShowBuilder};
 	use super::*;
 	use crate::cache::Cache;
 
-	fn new_show(strip_patterns: Vec<&str>) -> Show {
+	fn new_show(strip_patterns: Vec<&str>, date_format: Option<DateFormat>) -> Show {
 		ShowBuilder::default()
 			.title("FAKESHOW")
 			.url("http://example.com/feed.rss")
@@ -103,13 +110,14 @@ mod tests {
 					.collect::<Vec<String>>(),
 			)
 			.regex_container(Cache::default())
+			.date_extraction_format(date_format)
 			.build()
 			.unwrap()
 	}
 
 	#[test]
 	fn test_basic_stripping() {
-		let show = new_show(vec![]);
+		let show = new_show(vec![], None);
 		let rc = show.regex_container();
 		let raw_title =
 			Episode::process_raw_title("FAKESHOW 666: We fought the devil - LIVE EPISODE ", rc);
@@ -119,11 +127,32 @@ mod tests {
 
 	#[test]
 	fn test_regex_stripping() {
-		let show = new_show(vec![r#"\s+-\s+LIVE EPISODE$"#]);
+		let show = new_show(vec![r#"\s+-\s+LIVE EPISODE$"#], None);
 		let rc = show.regex_container();
 		let raw_title =
 			Episode::process_raw_title("FAKESHOW 666: We fought the devil - LIVE EPISODE", rc);
 
 		assert_eq!(raw_title, "666: We fought the devil")
+	}
+
+	#[test]
+	fn test_american_conventional_date_extraction() {
+		let show = new_show(vec![], Some(DateFormat::AmericanConventional));
+
+		let enclosure = rss::EnclosureBuilder::default()
+			.url("https://example.com/file.mp3")
+			.build()
+			.unwrap();
+
+		let item = rss::ItemBuilder::default()
+			.pub_date(Some("01 Jun 2016 14:31:46 -0700".into()))
+			.title(Some("1/2/03 - Full Show".into()))
+			.enclosure(Some(enclosure))
+			.build()
+			.unwrap();
+
+		let ep = Episode::new(&show, item).unwrap();
+
+		assert_eq!(ep.filename(), "FAKESHOW - 2003-01-02 - Full Show.mp3");
 	}
 }

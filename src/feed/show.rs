@@ -1,9 +1,11 @@
+use super::date_format::DateFormat;
 use crate::cache::Cache;
+use derive_getters::Getters;
 use regex::Regex;
 use serde::Deserialize;
 use std::rc::Rc;
 
-#[derive(Deserialize, Debug, Builder)]
+#[derive(Deserialize, Debug, Builder, Getters)]
 #[builder(setter(into))]
 #[serde(rename_all = "camelCase")]
 pub struct Show {
@@ -14,18 +16,13 @@ pub struct Show {
 	title_strip_patterns: Vec<String>,
 
 	#[serde(skip, default)]
+	#[getter(skip)]
 	regex_container: Cache<RegexContainer>,
+
+	date_extraction_format: Option<DateFormat>,
 }
 
 impl Show {
-	pub fn title(&self) -> &str {
-		&self.title
-	}
-
-	pub fn url(&self) -> &str {
-		&self.url
-	}
-
 	pub fn regex_container(&self) -> Rc<RegexContainer> {
 		self.regex_container.get(|| RegexContainer::from(self))
 	}
