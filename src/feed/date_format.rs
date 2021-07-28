@@ -1,29 +1,67 @@
 use chrono::prelude::*;
 use regex::Regex;
 use serde::Deserialize;
+use std::ops::Deref;
 use std::ops::Range;
 use std::str::FromStr;
+
+#[derive(Debug)]
+enum RefOrNot<'a, T> {
+	Owned(T),
+	Borrowed(&'a T),
+}
+
+impl<'a, T> Deref for RefOrNot<'a, T> {
+	type Target = T;
+
+	fn deref(&self) -> &T {
+		match self {
+			RefOrNot::Owned(o) => &o,
+			RefOrNot::Borrowed(b) => b,
+		}
+	}
+}
 
 lazy_static! {
 	static ref AMERICAN_CONVENTIONAL_DATE_FORMAT_REGEX: Regex =
 		Regex::new(r#"(\d{1,2})[\-/](\d{1,2})[\-/](\d{2,4})"#).unwrap();
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Copy)]
 pub enum DateFormat {
 	AmericanConventional,
 }
 
 impl DateFormat {
-	pub fn extract_date(&self, string: &str) -> Option<(NaiveDate, Range<usize>)> {
+	pub fn make_extractor(&self, edge_strip_raw_pattern: Option<&str>) -> DateExtractor<'static> {
+		let composed_pattern = Self::composite_pattern(self.pattern(), edge_strip_raw_pattern);
+
+		DateExtractor::new(*self, composed_pattern)
+	}
+
+	fn pattern(&self) -> &'static Regex {
 		use DateFormat::*;
 		match self {
-			AmericanConventional => Self::extract_date_american(string),
+			AmericanConventional => &*AMERICAN_CONVENTIONAL_DATE_FORMAT_REGEX,
 		}
 	}
 
-	fn extract_date_american(string: &str) -> Option<(NaiveDate, Range<usize>)> {
-		let captures = AMERICAN_CONVENTIONAL_DATE_FORMAT_REGEX.captures(string)?;
+	fn extract_date(
+		&self,
+		string: &str,
+		composed_pattern: &RefOrNot<Regex>,
+	) -> Option<(NaiveDate, Range<usize>)> {
+		use DateFormat::*;
+		match self {
+			AmericanConventional => Self::extract_date_american(string, composed_pattern),
+		}
+	}
+
+	fn extract_date_american(
+		string: &str,
+		composed_pattern: &RefOrNot<Regex>,
+	) -> Option<(NaiveDate, Range<usize>)> {
+		let captures = composed_pattern.captures(string)?;
 		if captures.len() != 4 {
 			// The 0th capture is the whole match
 			return None;
@@ -46,6 +84,20 @@ impl DateFormat {
 
 		Some((date, range))
 	}
+
+	fn composite_pattern<'a>(
+		base: &'a Regex,
+		edge_strip_raw_pattern: Option<&str>,
+	) -> RefOrNot<'a, Regex> {
+		if let Some(esrp) = edge_strip_raw_pattern {
+			let new_raw_pattern = format!("{}{}{}", esrp, base.as_str(), esrp);
+			let new_pattern = Regex::new(&new_raw_pattern).expect("Bad Regex");
+
+			RefOrNot::Owned(new_pattern)
+		} else {
+			RefOrNot::Borrowed(base)
+		}
+	}
 }
 
 #[cfg(test)]
@@ -53,21 +105,59 @@ mod tests {
 	use super::*;
 
 	#[test]
-	fn test_american_conventional() {
-		let ac = DateFormat::AmericanConventional;
+	fn test_american_conventional_no_strip() {
+		let extractor = DateFormat::AmericanConventional.make_extractor(None);
 
-		let (date, range) = ac
+		let (date, range) = extractor
 			.extract_date("FAKESHOW - 7/4/19 - How to raise the dead")
 			.unwrap();
 
 		assert_eq!(date, NaiveDate::from_ymd(2019, 7, 4));
 		assert_eq!(range, 11..17);
 
-		let (date, range) = ac
+		let (date, range) = extractor
 			.extract_date("FAKESHOW - 07/04/2019 - How to raise the dead")
 			.unwrap();
 
 		assert_eq!(date, NaiveDate::from_ymd(2019, 7, 4));
 		assert_eq!(range, 11..21);
+	}
+
+	#[test]
+	fn test_american_conventional_strip() {
+		let extractor = DateFormat::AmericanConventional.make_extractor(Some(r#"[\-\s]*"#));
+
+		let (date, range) = extractor
+			.extract_date("FAKESHOW - 7/4/19 - How to raise the dead")
+			.unwrap();
+
+		assert_eq!(date, NaiveDate::from_ymd(2019, 7, 4));
+		assert_eq!(range, 8..20);
+
+		let (date, range) = extractor
+			.extract_date("FAKESHOW - 07/04/2019 - How to raise the dead")
+			.unwrap();
+
+		assert_eq!(date, NaiveDate::from_ymd(2019, 7, 4));
+		assert_eq!(range, 8..24);
+	}
+}
+
+#[derive(Debug)]
+pub struct DateExtractor<'a> {
+	format: DateFormat,
+	composed_pattern: RefOrNot<'a, Regex>,
+}
+
+impl<'a> DateExtractor<'a> {
+	fn new(format: DateFormat, composed_pattern: RefOrNot<'a, Regex>) -> Self {
+		Self {
+			format,
+			composed_pattern,
+		}
+	}
+
+	pub fn extract_date(&self, string: &str) -> Option<(NaiveDate, Range<usize>)> {
+		self.format.extract_date(string, &self.composed_pattern)
 	}
 }

@@ -1,9 +1,8 @@
-use super::error::*;
-use super::RegexContainer;
-use super::Show;
+use super::{error::*, RegexContainer, Show};
 use chrono::prelude::*;
 use derive_getters::Getters;
 use regex::Regex;
+use std::borrow::Cow;
 use std::rc::Rc;
 
 lazy_static! {
@@ -11,7 +10,7 @@ lazy_static! {
 }
 
 #[derive(Builder, Getters)]
-#[builder(setter(into))]
+#[builder(setter(into), pattern = "owned")]
 pub struct Episode {
 	enclosure_url: String,
 	filename: String,
@@ -19,10 +18,7 @@ pub struct Episode {
 
 impl Episode {
 	pub fn new(show: &Show, rss_item: rss::Item) -> Result<Self, ParsingError> {
-		let mut title = Self::process_raw_title(
-			rss_item.title().ok_or(ParsingError::EpisodeTitleMissing)?,
-			show.regex_container(),
-		);
+		let mut title = Cow::Borrowed(rss_item.title().ok_or(ParsingError::EpisodeTitleMissing)?);
 
 		let string_pub_date = rss_item
 			.pub_date()
@@ -31,12 +27,13 @@ impl Episode {
 			.naive_local()
 			.date();
 
-		if let Some(def) = show.date_extraction_format() {
-			if let Some((date, range)) = def.extract_date(&title) {
+		if let Some(date_extractor) = show.date_extractor() {
+			if let Some((date, range)) = date_extractor.extract_date(&title) {
 				pub_date = date;
-				title.replace_range(range, "");
+				title.to_mut().replace_range(range, "");
 			}
 		}
+		let title = Self::process_raw_title(title, show.regex_container());
 
 		let enclosure_url = rss_item
 			.enclosure()
@@ -95,11 +92,19 @@ impl Episode {
 
 #[cfg(test)]
 mod tests {
-	use super::super::{DateFormat, ShowBuilder};
+	use super::super::{DateExtractionBuilder, DateFormat, ShowBuilder};
 	use super::*;
 	use crate::cache::Cache;
 
 	fn new_show(strip_patterns: Vec<&str>, date_format: Option<DateFormat>) -> Show {
+		let de = date_format.map(|form| {
+			DateExtractionBuilder::default()
+				.format(form)
+				.edge_strip_pattern_raw(r#"[\-\s]*"#)
+				.build()
+				.unwrap()
+		});
+
 		ShowBuilder::default()
 			.title("FAKESHOW")
 			.url("http://example.com/feed.rss")
@@ -110,7 +115,7 @@ mod tests {
 					.collect::<Vec<String>>(),
 			)
 			.regex_container(Cache::default())
-			.date_extraction_format(date_format)
+			.date_extraction(de)
 			.build()
 			.unwrap()
 	}
