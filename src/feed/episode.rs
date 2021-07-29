@@ -94,7 +94,6 @@ impl Episode {
 mod tests {
 	use super::super::{DateExtractionBuilder, DateFormat, ShowBuilder};
 	use super::*;
-	use crate::cache::Cache;
 
 	fn new_show(strip_patterns: Vec<&str>, date_format: Option<DateFormat>) -> Show {
 		let de = date_format.map(|form| {
@@ -114,7 +113,6 @@ mod tests {
 					.map(|s| s.into())
 					.collect::<Vec<String>>(),
 			)
-			.regex_container(Cache::default())
 			.date_extraction(de)
 			.build()
 			.unwrap()

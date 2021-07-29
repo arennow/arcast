@@ -28,7 +28,16 @@ impl DateExtraction {
 	}
 }
 
-#[derive(Deserialize, Debug, Builder, Getters)]
+#[derive(Debug, Deserialize)]
+pub enum Clusions {
+	#[serde(rename = "inclusionPatterns")]
+	Inclusion(Vec<String>),
+
+	#[serde(rename = "exclusionPatterns")]
+	Exclusion(Vec<String>),
+}
+
+#[derive(Deserialize, Debug, Builder)]
 #[builder(setter(into), pattern = "owned")]
 #[serde(rename_all = "camelCase")]
 pub struct Show {
@@ -36,18 +45,28 @@ pub struct Show {
 	url: String,
 
 	#[serde(default)]
-	#[getter(skip)]
 	title_strip_patterns: Vec<String>,
 
 	#[serde(skip, default)]
-	#[getter(skip)]
+	#[builder(default)]
 	regex_container: Cache<RegexContainer>,
 
-	#[getter(skip)]
 	date_extraction: Option<DateExtraction>,
+
+	#[serde(flatten)]
+	#[builder(default)]
+	clusions: Option<Clusions>,
 }
 
 impl Show {
+	pub fn title(&self) -> &str {
+		&self.title
+	}
+
+	pub fn url(&self) -> &str {
+		&self.url
+	}
+
 	pub fn regex_container(&self) -> Rc<RegexContainer> {
 		self.regex_container.get(|| RegexContainer::from(self))
 	}
