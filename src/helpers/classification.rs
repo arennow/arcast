@@ -1,13 +1,17 @@
 use crate::config::Config;
-use crate::feed::Episode;
+use crate::feed::{Clusions, Episode, Show};
 use crate::filesystem;
+use regex::Regex;
 use std::collections::HashSet;
 
+#[derive(Debug)]
 pub enum EpisodeStatus {
 	Need,
 	Have,
+	ShouldSkip,
 }
 
+#[derive(Debug)]
 pub struct ClassifiedEpisode<'a> {
 	status: EpisodeStatus,
 	episode: &'a Episode,
@@ -19,28 +23,62 @@ impl<'a> ClassifiedEpisode<'a> {
 	}
 }
 
-fn classified_episodes_from_set(
-	all_episodes: &[Episode],
-	existing_files: HashSet<String>,
-) -> impl Iterator<Item = ClassifiedEpisode> {
-	all_episodes
-		.iter()
-		.map(move |episode| {
-			use EpisodeStatus::*;
-			let contains = existing_files.contains(&*episode.filename());
-			let status = if contains { Have } else { Need };
+fn any_match(regexes: &[Regex], string: &str) -> bool {
+	for r in regexes {
+		if r.is_match(string) {
+			return true;
+		}
+	}
 
-			ClassifiedEpisode { status, episode }
-		})
-		.rev()
+	false
+}
+
+fn classified_episodes_from_set<'a>(
+	show: &Show,
+	all_episodes: &'a [Episode],
+	existing_files: HashSet<String>,
+) -> impl Iterator<Item = ClassifiedEpisode<'a>> {
+	let clusions = show.regex_container().clusions().clone();
+
+	all_episodes.iter().rev().map(move |episode| {
+		use Clusions::*;
+		use EpisodeStatus::*;
+
+		let get_status = || -> EpisodeStatus {
+			if let Some(clusions) = &clusions {
+				match clusions {
+					Inclusion(regs) => {
+						if !any_match(&regs, episode.filename()) {
+							return ShouldSkip;
+						}
+					}
+					Exclusion(regs) => {
+						if any_match(&regs, episode.filename()) {
+							return ShouldSkip;
+						}
+					}
+				}
+			}
+
+			let already_have = existing_files.contains(&*episode.filename());
+			let status = if already_have { Have } else { Need };
+
+			status
+		};
+
+		let status = get_status();
+
+		ClassifiedEpisode { status, episode }
+	})
 }
 
 pub fn classified_episodes<'a>(
+	show: &Show,
 	all_episodes: &'a [Episode],
 	config: &Config,
 ) -> Result<impl Iterator<Item = ClassifiedEpisode<'a>>, filesystem::FilesystemError> {
 	let existing_files = filesystem::list_files(config.destination())?;
-	let filtered_eps = classified_episodes_from_set(all_episodes, existing_files);
+	let filtered_eps = classified_episodes_from_set(show, all_episodes, existing_files);
 
 	Ok(filtered_eps)
 }

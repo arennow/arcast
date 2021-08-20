@@ -91,7 +91,7 @@ impl DateFormat {
 	) -> RefOrNot<'a, Regex> {
 		if let Some(esrp) = edge_strip_raw_pattern {
 			let new_raw_pattern = format!("{}{}{}", esrp, base.as_str(), esrp);
-			let new_pattern = Regex::new(&new_raw_pattern).expect("Bad Regex");
+			let new_pattern = crate::feed::RegexContainer::compile_pattern(&new_raw_pattern);
 
 			RefOrNot::Owned(new_pattern)
 		} else {

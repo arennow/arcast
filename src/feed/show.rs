@@ -28,13 +28,26 @@ impl DateExtraction {
 	}
 }
 
-#[derive(Debug, Deserialize)]
-pub enum Clusions {
+#[derive(Debug, Deserialize, Clone)]
+pub enum Clusions<T> {
 	#[serde(rename = "inclusionPatterns")]
-	Inclusion(Vec<String>),
+	Inclusion(Vec<T>),
 
 	#[serde(rename = "exclusionPatterns")]
-	Exclusion(Vec<String>),
+	Exclusion(Vec<T>),
+}
+
+impl<T> Clusions<T> {
+	fn map<R, F>(&self, f: F) -> Clusions<R>
+	where
+		F: Fn(&Vec<T>) -> Vec<R>,
+	{
+		use Clusions::*;
+		match self {
+			Inclusion(v) => Inclusion(f(v)),
+			Exclusion(v) => Exclusion(f(v)),
+		}
+	}
 }
 
 #[derive(Deserialize, Debug, Builder)]
@@ -55,7 +68,7 @@ pub struct Show {
 
 	#[serde(flatten)]
 	#[builder(default)]
-	clusions: Option<Clusions>,
+	raw_clusions: Option<Clusions<String>>,
 }
 
 impl Show {
@@ -80,6 +93,7 @@ impl Show {
 pub struct RegexContainer {
 	leading_show_title_strip: Regex,
 	custom_episode_title_strips: Vec<Regex>,
+	clusions: Option<Clusions<Regex>>,
 }
 
 impl From<&Show> for RegexContainer {
@@ -92,8 +106,21 @@ impl From<&Show> for RegexContainer {
 			custom_episode_title_strips: show
 				.title_strip_patterns
 				.iter()
-				.map(|raw_str| Regex::new(raw_str).expect("Bad Regex"))
+				.map(|raw_str| RegexContainer::compile_pattern(raw_str))
 				.collect(),
+			clusions: show.raw_clusions.as_ref().map(|c| {
+				c.map(|e| {
+					e.iter()
+						.map(|s| RegexContainer::compile_pattern(s))
+						.collect()
+				})
+			}),
 		}
+	}
+}
+
+impl RegexContainer {
+	pub fn compile_pattern(pattern: &str) -> Regex {
+		Regex::new(pattern).expect("Bad Regex")
 	}
 }

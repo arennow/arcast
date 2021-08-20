@@ -22,7 +22,7 @@ fn do_work() -> Result<(), Box<dyn std::error::Error>> {
 
 	let (reader, _) = download::download_to_reader(show.url())?;
 	let episodes = feed::episodes_from_reader(reader, &show)?;
-	let classified_eps = helpers::classified_episodes(&episodes, &config)?;
+	let classified_eps = helpers::classified_episodes(&show, &episodes, &config)?;
 
 	helpers::process_classified_episodes(classified_eps, &config)?;
 	Ok(())

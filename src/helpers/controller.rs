@@ -27,6 +27,7 @@ pub fn process_classified_episodes<'a>(
 				}
 				missing_processed += 1;
 			}
+			helpers::EpisodeStatus::ShouldSkip => (),
 		}
 	}
 

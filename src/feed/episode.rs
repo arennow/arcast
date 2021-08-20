@@ -9,7 +9,7 @@ lazy_static! {
 	static ref EDGE_TRIM_REGEX: Regex = Regex::new(r#"^\s+|\s+$"#).unwrap();
 }
 
-#[derive(Builder, Getters)]
+#[derive(Builder, Getters, Debug)]
 #[builder(setter(into), pattern = "owned")]
 pub struct Episode {
 	enclosure_url: String,
