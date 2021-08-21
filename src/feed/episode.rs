@@ -7,6 +7,8 @@ use std::rc::Rc;
 
 lazy_static! {
 	static ref EDGE_TRIM_REGEX: Regex = Regex::new(r#"^\s+|\s+$"#).unwrap();
+	static ref ENCLOSURE_URL_FILE_EXTENSION_REGEX: Regex =
+		Regex::new(r#"(?i)\.([a-z0-9]+)(?:\?.*?)?$"#).unwrap();
 }
 
 #[derive(Builder, Getters, Debug)]
@@ -35,13 +37,15 @@ impl Episode {
 		}
 		let title = Self::process_raw_title(title, show.regex_container());
 
-		let enclosure_url = rss_item
+		let enclosure_url: String = rss_item
 			.enclosure()
 			.ok_or(ParsingError::EpisodeEnclosureURLMissing)?
 			.url()
 			.into();
 
-		let filename = Self::generate_filename(&show, &pub_date, &title);
+		let filename_extension = Self::get_enclosure_extension(&enclosure_url);
+
+		let filename = Self::generate_filename(&show, &pub_date, &title, filename_extension);
 
 		Ok(Episode {
 			enclosure_url,
@@ -49,12 +53,27 @@ impl Episode {
 		})
 	}
 
-	fn generate_filename(show: &Show, pub_date: &NaiveDate, title: &str) -> String {
+	fn get_enclosure_extension(url: &str) -> &str {
+		if let Some(captures) = (*ENCLOSURE_URL_FILE_EXTENSION_REGEX).captures(url) {
+			if let Some(capt) = captures.get(1) {
+				return capt.as_str();
+			}
+		}
+		return "mp3";
+	}
+
+	fn generate_filename(
+		show: &Show,
+		pub_date: &NaiveDate,
+		title: &str,
+		extension: &str,
+	) -> String {
 		format!(
-			"{} - {} - {}.mp3",
+			"{} - {} - {}.{}",
 			show.title(),
 			Self::formatted_string_for_date(pub_date),
-			title
+			title,
+			extension
 		)
 	}
 
@@ -157,5 +176,31 @@ mod tests {
 		let ep = Episode::new(&show, item).unwrap();
 
 		assert_eq!(ep.filename(), "FAKESHOW - 2003-01-02 - Full Show.mp3");
+	}
+
+	#[test]
+	fn test_enclosure_extension_extraction() {
+		let mkvs = [
+			"https://example.com/file.mkv",
+			"https://example.com/file.mkv?",
+			"https://example.com/file.mkv?query=thing",
+		];
+
+		for mkv in mkvs {
+			assert_eq!(Episode::get_enclosure_extension(mkv), "mkv");
+		}
+
+		let mp3s = [
+			"https://example.com/file.mp3",
+			"https://example.com/file.mp3?",
+			"https://example.com/file.mp3?query=thing",
+			"https://example.com/file",
+			"https://example.com/file?",
+			"https://example.com/file?query=thing",
+		];
+
+		for mp3 in mp3s {
+			assert_eq!(Episode::get_enclosure_extension(mp3), "mp3");
+		}
 	}
 }
