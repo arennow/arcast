@@ -48,12 +48,12 @@ fn classified_episodes_from_set<'a>(
 			if let Some(clusions) = &clusions {
 				match clusions {
 					Inclusion(regs) => {
-						if !any_match(&regs, episode.filename()) {
+						if !any_match(&regs, episode.episode_name()) {
 							return ShouldSkip;
 						}
 					}
 					Exclusion(regs) => {
-						if any_match(&regs, episode.filename()) {
+						if any_match(&regs, episode.episode_name()) {
 							return ShouldSkip;
 						}
 					}

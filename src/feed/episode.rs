@@ -3,6 +3,7 @@ use chrono::prelude::*;
 use derive_getters::Getters;
 use regex::Regex;
 use std::borrow::Cow;
+use std::ops::Range;
 use std::rc::Rc;
 
 lazy_static! {
@@ -18,6 +19,9 @@ lazy_static! {
 pub struct Episode {
 	enclosure_url: String,
 	filename: String,
+
+	#[getter(skip)]
+	episode_name_range: Range<usize>,
 }
 
 impl Episode {
@@ -46,12 +50,13 @@ impl Episode {
 			.into();
 
 		let filename_extension = Self::get_enclosure_extension(&enclosure_url);
-
-		let filename = Self::generate_filename(&show, &pub_date, &title, filename_extension);
+		let (filename, episode_name_range) =
+			Self::generate_filename(&show, &pub_date, &title, filename_extension);
 
 		Ok(Episode {
 			enclosure_url,
 			filename,
+			episode_name_range,
 		})
 	}
 
@@ -69,14 +74,18 @@ impl Episode {
 		pub_date: &NaiveDate,
 		title: &str,
 		extension: &str,
-	) -> String {
-		format!(
+	) -> (String, Range<usize>) {
+		let filename = format!(
 			"{} - {} - {}.{}",
 			show.title(),
 			Self::formatted_string_for_date(pub_date),
 			title,
 			extension
-		)
+		);
+
+		let name_end_index = filename.len() - (extension.len() + 1); // +1 for the .
+
+		(filename, 0..name_end_index)
 	}
 
 	fn process_raw_title<S: Into<String>>(raw_title: S, regex_cont: Rc<RegexContainer>) -> String {
@@ -112,6 +121,12 @@ impl Episode {
 	fn formatted_string_for_date(date: &NaiveDate) -> impl std::fmt::Display {
 		date.format("%F")
 		// Year-month-day format (ISO 8601). Same as %Y-%m-%d. (https://docs.rs/chrono/0.4.19/chrono/format/strftime/index.html)
+	}
+}
+
+impl Episode {
+	pub fn episode_name(&self) -> &str {
+		&self.filename[self.episode_name_range.clone()]
 	}
 }
 
@@ -170,6 +185,29 @@ mod tests {
 			Episode::process_raw_title("FAKESHOW 666: We fought the devil - LIVE EPISODE", rc);
 
 		assert_eq!(raw_title, "666: We fought the devil")
+	}
+
+	#[test]
+	fn test_generate_filename() {
+		let show = new_show(vec![], None);
+
+		let (filename, ep_name_range) = Episode::generate_filename(
+			&show,
+			&NaiveDate::from_ymd(2021, 2, 21),
+			"This Great Ep!",
+			"wavefile",
+		);
+
+		let ep = EpisodeBuilder::default()
+			.enclosure_url("https://example.com/file.mp3")
+			.filename(&filename)
+			.episode_name_range(ep_name_range.clone())
+			.build()
+			.unwrap();
+
+		assert_eq!(filename, "FAKESHOW - 2021-02-21 - This Great Ep!.wavefile");
+		assert_eq!(ep_name_range, 0..38);
+		assert_eq!(ep.episode_name(), "FAKESHOW - 2021-02-21 - This Great Ep!");
 	}
 
 	#[test]
