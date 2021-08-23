@@ -9,6 +9,8 @@ lazy_static! {
 	static ref EDGE_TRIM_REGEX: Regex = Regex::new(r#"^\s+|\s+$"#).unwrap();
 	static ref ENCLOSURE_URL_FILE_EXTENSION_REGEX: Regex =
 		Regex::new(r#"(?i)\.([a-z0-9]+)(?:\?.*?)?$"#).unwrap();
+	static ref STANDARD_CHARACTER_REPLACEMENT_PAIRS: [(&'static str, &'static str); 1] =
+		[(" ", " ")];
 }
 
 #[derive(Builder, Getters, Debug)]
@@ -91,6 +93,10 @@ impl Episode {
 			reg.replace_all(&title, "").into_owned()
 		});
 
+		for (source, dest) in STANDARD_CHARACTER_REPLACEMENT_PAIRS.iter() {
+			processed_title = processed_title.replace(source, dest);
+		}
+
 		unsafe {
 			// This unsafe is safe because these two chars are the same length
 			for byte in processed_title.as_bytes_mut().iter_mut() {
@@ -145,6 +151,15 @@ mod tests {
 			Episode::process_raw_title("FAKESHOW 666: We fought the devil - LIVE EPISODE ", rc);
 
 		assert_eq!(raw_title, "666: We fought the devil - LIVE EPISODE")
+	}
+
+	#[test]
+	fn test_standard_title_replacements() {
+		let show = new_show(vec![], None);
+		let rc = show.regex_container();
+		let raw_title = Episode::process_raw_title("nbsp:  ;", rc);
+
+		assert_eq!(raw_title, "nbsp:  ;")
 	}
 
 	#[test]
