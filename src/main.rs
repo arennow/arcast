@@ -16,7 +16,12 @@ use structopt::StructOpt;
 fn do_work() -> Result<(), Box<dyn std::error::Error>> {
 	let config = config::Config::from_args();
 	let show: feed::Show = {
-		let config_file_handle = std::fs::File::open(config.config_file_path())?;
+		let config_file_path_string = config.config_file_path().to_string_lossy();
+		let config_file_handle =
+			filesystem::FilesystemError::handling_io_error_in(config_file_path_string, || {
+				std::fs::File::open(config.config_file_path())
+			})?;
+
 		serde_json::from_reader(config_file_handle)
 	}?;
 
