@@ -1,12 +1,36 @@
 use super::progress_bars::TitledBar;
 use crate::config::Config;
-use crate::download::download_to_file;
+use crate::download::{download_to_file, DownloadError};
 use crate::feed::Episode;
+use derive_getters::Getters;
 use std::boxed::Box;
-use std::error::Error;
+use std::fmt::Display;
 use std::io::Write;
+use std::path::PathBuf;
+use thiserror::Error as TError;
 
-pub fn download_episode(episode: &Episode, config: &Config) -> Result<(), Box<dyn Error>> {
+#[derive(TError, Debug, Getters)]
+pub struct DownloadClientError {
+	download_path: PathBuf,
+	source: DownloadError,
+}
+
+impl DownloadClientError {
+	fn new(source: DownloadError, download_path: PathBuf) -> Self {
+		DownloadClientError {
+			source,
+			download_path,
+		}
+	}
+}
+
+impl Display for DownloadClientError {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
+		Display::fmt(&self.source, f)
+	}
+}
+
+pub fn download_episode(episode: &Episode, config: &Config) -> Result<(), DownloadClientError> {
 	let mut file_dest_path = config.destination().to_path_buf();
 	file_dest_path.push(&*episode.filename());
 
@@ -27,7 +51,10 @@ pub fn download_episode(episode: &Episode, config: &Config) -> Result<(), Box<dy
 			Box::new(|_| {})
 		};
 
-	download_to_file(&episode.enclosure_url(), file_dest_path, progress_function)?;
+	if let Err(e) = download_to_file(&episode.enclosure_url(), &file_dest_path, progress_function) {
+		let new_error = DownloadClientError::new(e, file_dest_path);
+		return Err(new_error);
+	}
 
 	println!();
 
