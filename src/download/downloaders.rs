@@ -72,3 +72,20 @@ where
 	})
 	.map_err(|e| e.into())
 }
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn test_pipe() {
+		let src: [u8; 8] = [1, 2, 3, 4, 5, 6, 7, 8];
+		let mut src_cur = std::io::Cursor::new(&src);
+		let mut dest = [0 as u8; 8];
+		let mut dest_cur = std::io::Cursor::new(&mut dest[..]);
+
+		pipe(&mut src_cur, &mut dest_cur, "idk", |_| {}).unwrap();
+
+		assert_eq!(src, dest);
+	}
+}
