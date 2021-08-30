@@ -6,10 +6,7 @@ use std::path::Path;
 
 pub fn download_to_reader(source_url: &str) -> Result<(impl Read, Option<usize>), DownloadError> {
 	let resp = ureq::get(source_url).call()?;
-	let content_length = resp
-		.header("Content-Length")
-		.map(|s| s.parse().ok())
-		.flatten();
+	let content_length = resp.header("Content-Length").and_then(|s| s.parse().ok());
 	Ok((resp.into_reader(), content_length))
 }
 
@@ -81,7 +78,7 @@ mod tests {
 	fn test_pipe() {
 		let src: [u8; 8] = [1, 2, 3, 4, 5, 6, 7, 8];
 		let mut src_cur = std::io::Cursor::new(&src);
-		let mut dest = [0 as u8; 8];
+		let mut dest = [0; 8];
 		let mut dest_cur = std::io::Cursor::new(&mut dest[..]);
 
 		pipe(&mut src_cur, &mut dest_cur, "idk", |_| {}).unwrap();

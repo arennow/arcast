@@ -1,3 +1,11 @@
+#![warn(clippy::all)]
+#![warn(clippy::trivially_copy_pass_by_ref)]
+#![warn(clippy::map_flatten)]
+#![warn(clippy::needless_pass_by_value)]
+#![warn(clippy::redundant_closure_for_method_calls)]
+#![warn(clippy::inconsistent_struct_constructor)]
+#![warn(clippy::option_if_let_else)]
+
 #[macro_use]
 extern crate derive_builder;
 

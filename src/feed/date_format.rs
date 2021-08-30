@@ -16,7 +16,7 @@ impl<'a, T> Deref for RefOrNot<'a, T> {
 
 	fn deref(&self) -> &T {
 		match self {
-			RefOrNot::Owned(o) => &o,
+			RefOrNot::Owned(o) => o,
 			RefOrNot::Borrowed(b) => b,
 		}
 	}
@@ -33,13 +33,13 @@ pub enum DateFormat {
 }
 
 impl DateFormat {
-	pub fn make_extractor(&self, edge_strip_raw_pattern: Option<&str>) -> DateExtractor<'static> {
+	pub fn make_extractor(self, edge_strip_raw_pattern: Option<&str>) -> DateExtractor<'static> {
 		let composed_pattern = Self::composite_pattern(self.pattern(), edge_strip_raw_pattern);
 
-		DateExtractor::new(*self, composed_pattern)
+		DateExtractor::new(self, composed_pattern)
 	}
 
-	fn pattern(&self) -> &'static Regex {
+	fn pattern(self) -> &'static Regex {
 		use DateFormat::*;
 		match self {
 			AmericanConventional => &*AMERICAN_CONVENTIONAL_DATE_FORMAT_REGEX,
@@ -47,7 +47,7 @@ impl DateFormat {
 	}
 
 	fn extract_date(
-		&self,
+		self,
 		string: &str,
 		composed_pattern: &RefOrNot<Regex>,
 	) -> Option<(NaiveDate, Range<usize>)> {

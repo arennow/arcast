@@ -18,8 +18,8 @@ pub struct DownloadClientError {
 impl DownloadClientError {
 	fn new(source: DownloadError, download_path: PathBuf) -> Self {
 		DownloadClientError {
-			source,
 			download_path,
+			source,
 		}
 	}
 }
@@ -34,6 +34,7 @@ pub fn download_episode(episode: &Episode, config: &Config) -> Result<(), Downlo
 	let mut file_dest_path = config.destination().to_path_buf();
 	file_dest_path.push(&*episode.filename());
 
+	#[allow(clippy::option_if_let_else)]
 	let progress_function: Box<dyn FnMut(f64)> =
 		if let Some(terminal_size) = terminal_size::terminal_size() {
 			let mut stdout = termion::cursor::HideCursor::from(std::io::stdout());
@@ -51,7 +52,7 @@ pub fn download_episode(episode: &Episode, config: &Config) -> Result<(), Downlo
 			Box::new(|_| {})
 		};
 
-	if let Err(e) = download_to_file(&episode.enclosure_url(), &file_dest_path, progress_function) {
+	if let Err(e) = download_to_file(episode.enclosure_url(), &file_dest_path, progress_function) {
 		let new_error = DownloadClientError::new(e, file_dest_path);
 		return Err(new_error);
 	}

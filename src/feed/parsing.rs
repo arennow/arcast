@@ -9,7 +9,6 @@ pub fn episodes_from_reader(reader: impl Read, show: &Show) -> Result<Vec<Episod
 	Ok(channel
 		.into_items()
 		.into_iter()
-		.map(|rss_item| Episode::new(show, rss_item))
-		.flatten()
+		.flat_map(|rss_item| Episode::new(show, &rss_item))
 		.collect())
 }

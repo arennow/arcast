@@ -11,7 +11,7 @@ lazy_static! {
 	static ref ENCLOSURE_URL_FILE_EXTENSION_REGEX: Regex =
 		Regex::new(r#"(?i)\.([a-z0-9]+)(?:\?.*?)?$"#).unwrap();
 	static ref STANDARD_CHARACTER_REPLACEMENT_PAIRS: [(&'static str, &'static str); 1] =
-		[(" ", " ")];
+		[("\u{a0}", " ")]; // nbsp -> regular space
 }
 
 #[derive(Builder, Getters, Debug)]
@@ -28,7 +28,7 @@ pub struct Episode {
 }
 
 impl Episode {
-	pub fn new(show: &Show, rss_item: rss::Item) -> Result<Self, ParsingError> {
+	pub fn new(show: &Show, rss_item: &rss::Item) -> Result<Self, ParsingError> {
 		let mut title = Cow::Borrowed(rss_item.title().ok_or(ParsingError::EpisodeTitleMissing)?);
 
 		let string_pub_date = rss_item
@@ -54,7 +54,7 @@ impl Episode {
 
 		let filename_extension = Self::get_enclosure_extension(&enclosure_url);
 		let (filename, episode_name_range) =
-			Self::generate_filename(&show, &pub_date, &title, filename_extension);
+			Self::generate_filename(show, pub_date, &title, filename_extension);
 
 		Ok(Episode {
 			enclosure_url,
@@ -70,12 +70,13 @@ impl Episode {
 				return capt.as_str();
 			}
 		}
-		return "mp3";
+
+		"mp3"
 	}
 
 	fn generate_filename(
 		show: &Show,
-		pub_date: &NaiveDate,
+		pub_date: NaiveDate,
 		title: &str,
 		extension: &str,
 	) -> (String, Range<usize>) {
@@ -92,6 +93,7 @@ impl Episode {
 		(filename, 0..name_end_index)
 	}
 
+	#[allow(clippy::needless_pass_by_value)]
 	fn process_raw_title<S: Into<String>>(raw_title: S, regex_cont: Rc<RegexContainer>) -> String {
 		use std::iter::once;
 
@@ -122,7 +124,7 @@ impl Episode {
 		processed_title
 	}
 
-	fn formatted_string_for_date(date: &NaiveDate) -> impl std::fmt::Display {
+	fn formatted_string_for_date(date: NaiveDate) -> impl std::fmt::Display {
 		date.format("%F")
 		// Year-month-day format (ISO 8601). Same as %Y-%m-%d. (https://docs.rs/chrono/0.4.19/chrono/format/strftime/index.html)
 	}
@@ -203,7 +205,7 @@ mod tests {
 		let pub_date = NaiveDate::from_ymd(2021, 2, 21);
 
 		let (filename, ep_name_range) =
-			Episode::generate_filename(&show, &pub_date, "This Great Ep!", "wavefile");
+			Episode::generate_filename(&show, pub_date, "This Great Ep!", "wavefile");
 
 		let ep = EpisodeBuilder::default()
 			.enclosure_url("https://example.com/file.mp3")
@@ -234,7 +236,7 @@ mod tests {
 			.build()
 			.unwrap();
 
-		let ep = Episode::new(&show, item).unwrap();
+		let ep = Episode::new(&show, &item).unwrap();
 
 		assert_eq!(ep.filename(), "FAKESHOW - 2003-01-02 - Full Show.mp3");
 	}

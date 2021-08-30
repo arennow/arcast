@@ -50,12 +50,12 @@ fn classified_episodes_from_set<'a>(
 			if let Some(clusions) = &clusions {
 				match clusions {
 					Inclusion(regs) => {
-						if !any_match(&regs, episode.episode_name()) {
+						if !any_match(regs, episode.episode_name()) {
 							return ShouldSkip;
 						}
 					}
 					Exclusion(regs) => {
-						if any_match(&regs, episode.episode_name()) {
+						if any_match(regs, episode.episode_name()) {
 							return ShouldSkip;
 						}
 					}
@@ -63,9 +63,11 @@ fn classified_episodes_from_set<'a>(
 			}
 
 			let already_have = existing_files.contains(&*episode.filename());
-			let status = if already_have { Have } else { Need };
-
-			status
+			if already_have {
+				Have
+			} else {
+				Need
+			}
 		};
 
 		let mut status = get_status();

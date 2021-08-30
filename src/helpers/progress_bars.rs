@@ -20,7 +20,7 @@ pub struct TitledBar<'a> {
 
 impl<'a> TitledBar<'a> {
 	pub fn new(title: &'a str, width: u16) -> Self {
-		let sizes = Self::sizes(&title, width);
+		let sizes = Self::sizes(title, width);
 
 		let mut bar = Bar::new();
 		bar.set_style("[##-]");

@@ -89,7 +89,9 @@ impl Show {
 	}
 
 	pub fn date_extractor(&self) -> Option<Rc<DateExtractor<'static>>> {
-		self.date_extraction.as_ref().map(|de| de.date_extractor())
+		self.date_extraction
+			.as_ref()
+			.map(DateExtraction::date_extractor)
 	}
 
 	pub fn not_before_date(&self) -> Option<NaiveDate> {

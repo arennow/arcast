@@ -22,12 +22,10 @@ pub fn process_classified_episodes<'a>(
 			helpers::EpisodeStatus::Need => {
 				if config.pretend() {
 					println!("{} would be downloaded", episode.filename());
-				} else {
-					if let Err(e) = helpers::download_episode(episode, &config) {
-						// If there was an error, try to remove the partial file
-						let _ = std::fs::remove_file(e.download_path());
-						return Err(Box::new(e));
-					}
+				} else if let Err(e) = helpers::download_episode(episode, config) {
+					// If there was an error, try to remove the partial file
+					let _ = std::fs::remove_file(e.download_path());
+					return Err(Box::new(e));
 				}
 				missing_processed += 1;
 			}
