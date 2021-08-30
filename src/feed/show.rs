@@ -1,5 +1,6 @@
 use super::date_format::*;
 use crate::cache::Cache;
+use chrono::NaiveDate;
 use derive_getters::Getters;
 use regex::Regex;
 use serde::Deserialize;
@@ -69,6 +70,9 @@ pub struct Show {
 	#[serde(flatten)]
 	#[builder(default)]
 	raw_clusions: Option<Clusions<String>>,
+
+	#[serde(rename = "notBefore")]
+	not_before_date: Option<NaiveDate>,
 }
 
 impl Show {
@@ -86,6 +90,10 @@ impl Show {
 
 	pub fn date_extractor(&self) -> Option<Rc<DateExtractor<'static>>> {
 		self.date_extraction.as_ref().map(|de| de.date_extractor())
+	}
+
+	pub fn not_before_date(&self) -> Option<NaiveDate> {
+		self.not_before_date
 	}
 }
 

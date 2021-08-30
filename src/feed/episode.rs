@@ -18,10 +18,13 @@ lazy_static! {
 #[builder(setter(into), pattern = "owned")]
 pub struct Episode {
 	enclosure_url: String,
-	filename: String,
 
+	filename: String,
 	#[getter(skip)]
 	episode_name_range: Range<usize>,
+
+	#[getter(skip)]
+	pub_date: NaiveDate,
 }
 
 impl Episode {
@@ -57,6 +60,7 @@ impl Episode {
 			enclosure_url,
 			filename,
 			episode_name_range,
+			pub_date,
 		})
 	}
 
@@ -128,6 +132,10 @@ impl Episode {
 	pub fn episode_name(&self) -> &str {
 		&self.filename[self.episode_name_range.clone()]
 	}
+
+	pub fn pub_date(&self) -> NaiveDate {
+		self.pub_date
+	}
 }
 
 #[cfg(test)]
@@ -154,6 +162,7 @@ mod tests {
 					.collect::<Vec<String>>(),
 			)
 			.date_extraction(de)
+			.not_before_date(None)
 			.build()
 			.unwrap()
 	}
@@ -191,17 +200,16 @@ mod tests {
 	fn test_generate_filename() {
 		let show = new_show(vec![], None);
 
-		let (filename, ep_name_range) = Episode::generate_filename(
-			&show,
-			&NaiveDate::from_ymd(2021, 2, 21),
-			"This Great Ep!",
-			"wavefile",
-		);
+		let pub_date = NaiveDate::from_ymd(2021, 2, 21);
+
+		let (filename, ep_name_range) =
+			Episode::generate_filename(&show, &pub_date, "This Great Ep!", "wavefile");
 
 		let ep = EpisodeBuilder::default()
 			.enclosure_url("https://example.com/file.mp3")
 			.filename(&filename)
 			.episode_name_range(ep_name_range.clone())
+			.pub_date(pub_date)
 			.build()
 			.unwrap();
 

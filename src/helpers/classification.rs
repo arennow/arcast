@@ -4,7 +4,7 @@ use crate::filesystem;
 use regex::Regex;
 use std::collections::HashSet;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum EpisodeStatus {
 	Need,
 	Have,
@@ -40,6 +40,8 @@ fn classified_episodes_from_set<'a>(
 ) -> impl Iterator<Item = ClassifiedEpisode<'a>> {
 	let clusions = show.regex_container().clusions().clone();
 
+	let show_nb4d8 = show.not_before_date();
+
 	all_episodes.iter().rev().map(move |episode| {
 		use Clusions::*;
 		use EpisodeStatus::*;
@@ -66,7 +68,13 @@ fn classified_episodes_from_set<'a>(
 			status
 		};
 
-		let status = get_status();
+		let mut status = get_status();
+
+		if status == EpisodeStatus::Need
+			&& matches!(show_nb4d8, Some(not_before_date) if not_before_date > episode.pub_date())
+		{
+			status = EpisodeStatus::ShouldSkip;
+		}
 
 		ClassifiedEpisode { status, episode }
 	})
