@@ -3,8 +3,7 @@ use chrono::prelude::*;
 use derive_getters::Getters;
 use regex::Regex;
 use std::borrow::Cow;
-use std::ops::Range;
-use std::rc::Rc;
+use std::ops::{Deref, Range};
 
 lazy_static! {
 	static ref EDGE_TRIM_REGEX: Regex = Regex::new(r#"^\s+|\s+$"#).unwrap();
@@ -93,16 +92,14 @@ impl Episode {
 		(filename, 0..name_end_index)
 	}
 
-	#[allow(clippy::needless_pass_by_value)]
-	fn process_raw_title<S: Into<String>>(raw_title: S, regex_cont: Rc<RegexContainer>) -> String {
-		use std::iter::once;
-
-		// This bizarreness brought to you by the fact that [T; 2]'s iterator yields &T, but Map<T, _> yields T
-		let default_patterns =
-			once(regex_cont.leading_show_title_strip()).chain(once(&*EDGE_TRIM_REGEX));
+	fn process_raw_title(
+		raw_title: impl Into<String>,
+		regex_cont: impl Deref<Target = RegexContainer>,
+	) -> String {
+		let default_patterns = [regex_cont.leading_show_title_strip(), &*EDGE_TRIM_REGEX];
 		let custom_patterns = regex_cont.custom_episode_title_strips().iter();
 
-		let strip_patterns = default_patterns.chain(custom_patterns);
+		let strip_patterns = default_patterns.into_iter().chain(custom_patterns);
 
 		let mut processed_title: String = strip_patterns.fold(raw_title.into(), |title, reg| {
 			reg.replace_all(&title, "").into_owned()
