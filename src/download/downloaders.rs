@@ -5,7 +5,8 @@ use std::io::{BufWriter, Read, Write};
 use std::path::Path;
 
 pub fn download_to_reader(source_url: &str) -> Result<(impl Read, Option<usize>), DownloadError> {
-	let resp = ureq::get(source_url).call()?;
+	let agent = ureq::AgentBuilder::new().redirects(10).build();
+	let resp = agent.get(source_url).call()?;
 	let content_length = resp.header("Content-Length").and_then(|s| s.parse().ok());
 	Ok((resp.into_reader(), content_length))
 }
