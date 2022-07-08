@@ -157,7 +157,7 @@ mod tests {
 			.title_strip_patterns(
 				strip_patterns
 					.into_iter()
-					.map(|s| s.into())
+					.map(std::convert::Into::into)
 					.collect::<Vec<String>>(),
 			)
 			.date_extraction(de)

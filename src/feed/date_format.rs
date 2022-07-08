@@ -89,14 +89,12 @@ impl DateFormat {
 		base: &'a Regex,
 		edge_strip_raw_pattern: Option<&str>,
 	) -> RefOrNot<'a, Regex> {
-		if let Some(esrp) = edge_strip_raw_pattern {
+		edge_strip_raw_pattern.map_or(RefOrNot::Borrowed(base), |esrp| {
 			let new_raw_pattern = format!("{}{}{}", esrp, base.as_str(), esrp);
 			let new_pattern = crate::feed::RegexContainer::compile_pattern(&new_raw_pattern);
 
 			RefOrNot::Owned(new_pattern)
-		} else {
-			RefOrNot::Borrowed(base)
-		}
+		})
 	}
 }
 

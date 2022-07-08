@@ -1,19 +1,21 @@
 use std::ops::{Deref, DerefMut};
 
 pub struct HeapBuffer<const S: usize> {
-	storage: Vec<u8>
+	storage: Vec<u8>,
 }
 
 impl<const S: usize> HeapBuffer<S> {
 	pub fn new() -> Self {
 		HeapBuffer {
-			storage: vec![0; S]
+			storage: vec![0; S],
 		}
 	}
 }
 
 impl<const S: usize> Default for HeapBuffer<S> {
-	fn default() -> Self { Self::new() }
+	fn default() -> Self {
+		Self::new()
+	}
 }
 
 impl<const S: usize> Deref for HeapBuffer<S> {

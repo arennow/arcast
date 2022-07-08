@@ -68,7 +68,7 @@ where
 
 		Ok(bytes_written)
 	})
-	.map_err(|e| e.into())
+	.map_err(std::convert::Into::into)
 }
 
 #[cfg(test)]
