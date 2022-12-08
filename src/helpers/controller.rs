@@ -25,7 +25,7 @@ pub fn process_classified_episodes<'a>(
 				} else if let Err(e) = helpers::download_episode(episode, config) {
 					// If there was an error, try to remove the partial file
 					let _ = std::fs::remove_file(e.download_path());
-					return Err(Box::new(e));
+					return Err(e);
 				}
 				missing_processed += 1;
 			}

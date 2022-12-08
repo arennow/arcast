@@ -4,7 +4,9 @@ use crate::filesystem::FilesystemError;
 use std::io::{BufWriter, Read, Write};
 use std::path::Path;
 
-pub fn download_to_reader(source_url: &str) -> Result<(impl Read, Option<usize>), DownloadError> {
+pub fn download_to_reader(
+	source_url: &str,
+) -> Result<(impl Read, Option<usize>), Box<DownloadError>> {
 	let agent = ureq::AgentBuilder::new().redirects(10).build();
 	let resp = agent.get(source_url).call()?;
 	let content_length = resp.header("Content-Length").and_then(|s| s.parse().ok());
@@ -15,7 +17,7 @@ pub fn download_to_file<P: AsRef<Path>, PF>(
 	source_url: &str,
 	dest_path: P,
 	mut progress_func: PF,
-) -> Result<usize, DownloadError>
+) -> Result<usize, Box<DownloadError>>
 where
 	PF: FnMut(f64),
 {
@@ -42,7 +44,7 @@ fn pipe<R: Read, W: Write, S: Into<String>, PF>(
 	dest: &mut W,
 	dest_name: S,
 	mut progress_func: PF,
-) -> Result<usize, DownloadError>
+) -> Result<usize, Box<DownloadError>>
 where
 	PF: FnMut(usize),
 {

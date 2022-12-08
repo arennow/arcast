@@ -30,7 +30,10 @@ impl Display for DownloadClientError {
 	}
 }
 
-pub fn download_episode(episode: &Episode, config: &Config) -> Result<(), DownloadClientError> {
+pub fn download_episode(
+	episode: &Episode,
+	config: &Config,
+) -> Result<(), Box<DownloadClientError>> {
 	let mut file_dest_path = config.destination().to_path_buf();
 	file_dest_path.push(episode.filename());
 
@@ -53,8 +56,8 @@ pub fn download_episode(episode: &Episode, config: &Config) -> Result<(), Downlo
 		};
 
 	if let Err(e) = download_to_file(episode.enclosure_url(), &file_dest_path, progress_function) {
-		let new_error = DownloadClientError::new(e, file_dest_path);
-		return Err(new_error);
+		let new_error = DownloadClientError::new(*e, file_dest_path);
+		return Err(Box::new(new_error));
 	}
 
 	println!();
