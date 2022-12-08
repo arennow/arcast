@@ -42,7 +42,7 @@ impl DateFormat {
 	fn pattern(self) -> &'static Regex {
 		use DateFormat::*;
 		match self {
-			AmericanConventional => &*AMERICAN_CONVENTIONAL_DATE_FORMAT_REGEX,
+			AmericanConventional => &AMERICAN_CONVENTIONAL_DATE_FORMAT_REGEX,
 		}
 	}
 

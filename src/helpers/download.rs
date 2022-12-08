@@ -32,7 +32,7 @@ impl Display for DownloadClientError {
 
 pub fn download_episode(episode: &Episode, config: &Config) -> Result<(), DownloadClientError> {
 	let mut file_dest_path = config.destination().to_path_buf();
-	file_dest_path.push(&*episode.filename());
+	file_dest_path.push(episode.filename());
 
 	#[allow(clippy::option_if_let_else)]
 	let progress_function: Box<dyn FnMut(f64)> =

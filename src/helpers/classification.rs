@@ -62,7 +62,7 @@ fn classified_episodes_from_set<'a>(
 				}
 			}
 
-			let already_have = existing_files.contains(&*episode.filename());
+			let already_have = existing_files.contains(episode.filename());
 			if already_have {
 				Have
 			} else {
