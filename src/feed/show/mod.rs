@@ -133,4 +133,12 @@ impl RegexContainer {
 	pub fn compile_pattern(pattern: &str) -> Regex {
 		Regex::new(pattern).expect("Bad Regex")
 	}
+
+	#[cfg(test)]
+	fn has_only_default_title_strip(&self) -> bool {
+		self.custom_episode_title_strips.is_empty() && self.clusions.is_none()
+	}
 }
+
+#[cfg(test)]
+mod tests;

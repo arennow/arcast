@@ -27,7 +27,7 @@ lazy_static! {
 		Regex::new(r#"(\d{1,2})[\-/](\d{1,2})[\-/](\d{2,4})"#).unwrap();
 }
 
-#[derive(Debug, Deserialize, Clone, Copy)]
+#[derive(Debug, Deserialize, Clone, Copy, Eq, PartialEq)]
 pub enum DateFormat {
 	AmericanConventional,
 }
