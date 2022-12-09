@@ -67,7 +67,10 @@ fn test_parse_with_title_strip_pattern() -> Result<(), Box<dyn Error>> {
 	assert_eq!(show.title, "Hard Pod");
 	assert_eq!(show.url, "https://example.com/hardpod.xml");
 	assert_eq!(show.title_strip_patterns.len(), 2);
-	assert_eq!(show.regex_container().custom_episode_title_strips.len(), 2);
+	assert_eq!(
+		show.regex_container().custom_episode_title_strips().len(),
+		2
+	);
 	assert!(show.date_extraction.is_none());
 	assert!(show.not_before_date.is_none());
 
