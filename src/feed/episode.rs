@@ -139,8 +139,9 @@ impl Episode {
 
 #[cfg(test)]
 mod tests {
-	use super::super::{DateExtractionBuilder, DateFormat, ShowBuilder};
+	use super::super::{DateFormat, ShowBuilder};
 	use super::*;
+	use crate::feed::DateExtractionBuilder;
 
 	fn new_show(strip_patterns: Vec<&str>, date_format: Option<DateFormat>) -> Show {
 		let de = date_format.map(|form| {
