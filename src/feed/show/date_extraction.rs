@@ -3,22 +3,23 @@ use crate::{
 	feed::{DateExtractor, DateFormat},
 };
 use derive_builder::Builder;
-use derive_getters::Getters;
+use getset::Getters;
 use serde::Deserialize;
 use std::rc::Rc;
 
 #[derive(Deserialize, Clone, Debug, Getters, Builder)]
 #[builder(setter(into), pattern = "owned")]
+#[get = "pub"]
 pub struct DateExtraction {
 	format: DateFormat,
 
-	#[getter(skip)]
+	#[getset(skip)]
 	#[serde(rename = "edgeStripPattern")]
 	#[builder(default, setter(into, strip_option))]
 	edge_strip_pattern_raw: Option<String>,
 
 	#[serde(skip, default)]
-	#[getter(skip)]
+	#[getset(skip)]
 	#[builder(default)]
 	date_extractor: Cache<DateExtractor<'static>>,
 }

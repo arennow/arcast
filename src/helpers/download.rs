@@ -2,7 +2,7 @@ use super::progress_bars::TitledBar;
 use crate::config::Config;
 use crate::download::{download_to_file, DownloadError};
 use crate::feed::Episode;
-use derive_getters::Getters;
+use getset::Getters;
 use std::boxed::Box;
 use std::fmt::Display;
 use std::io::Write;
@@ -10,6 +10,7 @@ use std::path::PathBuf;
 use thiserror::Error as TError;
 
 #[derive(TError, Debug, Getters)]
+#[get = "pub"]
 pub struct DownloadClientError {
 	download_path: PathBuf,
 	source: DownloadError,

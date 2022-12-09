@@ -1,7 +1,9 @@
 use super::{Clusions, Show};
+use getset::Getters;
 use regex::Regex;
 
-#[derive(Debug, Clone, derive_getters::Getters)]
+#[derive(Debug, Clone, Getters)]
+#[get = "pub"]
 pub struct RegexContainer {
 	leading_show_title_strip: Regex,
 	custom_episode_title_strips: Vec<Regex>,

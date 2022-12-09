@@ -1,6 +1,6 @@
 use super::{error::*, RegexContainer, Show};
 use chrono::prelude::*;
-use derive_getters::Getters;
+use getset::Getters;
 use regex::Regex;
 use std::borrow::Cow;
 use std::ops::{Deref, Range};
@@ -15,14 +15,15 @@ lazy_static! {
 
 #[derive(Builder, Getters, Debug)]
 #[builder(setter(into), pattern = "owned")]
+#[get = "pub"]
 pub struct Episode {
 	enclosure_url: String,
-
 	filename: String,
-	#[getter(skip)]
+
+	#[getset(skip)]
 	episode_name_range: Range<usize>,
 
-	#[getter(skip)]
+	#[getset(skip)]
 	pub_date: NaiveDate,
 }
 
