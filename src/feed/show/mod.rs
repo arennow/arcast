@@ -1,10 +1,12 @@
 use super::date_format::*;
 use crate::cache::Cache;
 use chrono::NaiveDate;
+use getset::{CopyGetters, Getters};
 use std::rc::Rc;
 
-#[derive(Debug, Builder)]
+#[derive(Debug, Getters, CopyGetters, Builder)]
 #[builder(setter(into))]
+#[getset(get = "pub")]
 pub struct Show {
 	title: String,
 	url: String,
@@ -13,6 +15,7 @@ pub struct Show {
 	title_strip_patterns: Vec<String>,
 
 	#[builder(default)]
+	#[getset(skip)]
 	regex_container: Cache<RegexContainer>,
 
 	#[builder(default)]
@@ -22,18 +25,12 @@ pub struct Show {
 	raw_clusions: Option<Clusions<String>>,
 
 	#[builder(default)]
+	#[getset(skip)]
+	#[get_copy = "pub"]
 	not_before_date: Option<NaiveDate>,
 }
 
 impl Show {
-	pub fn title(&self) -> &str {
-		&self.title
-	}
-
-	pub fn url(&self) -> &str {
-		&self.url
-	}
-
 	pub fn regex_container(&self) -> Rc<RegexContainer> {
 		self.regex_container.get(|| RegexContainer::from(self))
 	}
@@ -42,10 +39,6 @@ impl Show {
 		self.date_extraction
 			.as_ref()
 			.map(DateExtraction::date_extractor)
-	}
-
-	pub fn not_before_date(&self) -> Option<NaiveDate> {
-		self.not_before_date
 	}
 }
 
