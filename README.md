@@ -7,8 +7,7 @@ In the future, I hope to better document the configuration file format, but for 
 ```json
 {
 	"title": "Accidental Tech Podcast",
-	"url": "https://atp.fm/episodes?format=rss",
-	"compareBasedOnFilename": true
+	"url": "https://atp.fm/episodes?format=rss"
 }
 ```
 
