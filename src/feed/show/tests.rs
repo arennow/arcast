@@ -144,7 +144,7 @@ fn test_parse_not_before_date() -> Result<(), Box<dyn Error>> {
 	assert!(show.date_extraction.is_none());
 	assert_eq!(
 		show.not_before_date,
-		Some(NaiveDate::from_ymd(2022, 06, 01))
+		Some(NaiveDate::from_ymd(2022, 6, 1))
 	);
 
 	Ok(())

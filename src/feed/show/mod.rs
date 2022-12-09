@@ -3,25 +3,6 @@ use crate::cache::Cache;
 use chrono::NaiveDate;
 use std::rc::Rc;
 
-#[derive(Debug, Clone)]
-pub enum Clusions<T> {
-	Inclusion(Vec<T>),
-	Exclusion(Vec<T>),
-}
-
-impl<T> Clusions<T> {
-	fn map<R, F>(&self, f: F) -> Clusions<R>
-	where
-		F: Fn(&Vec<T>) -> Vec<R>,
-	{
-		use Clusions::*;
-		match self {
-			Inclusion(v) => Inclusion(f(v)),
-			Exclusion(v) => Exclusion(f(v)),
-		}
-	}
-}
-
 #[derive(Debug, Builder)]
 #[builder(setter(into))]
 pub struct Show {
@@ -67,6 +48,9 @@ impl Show {
 		self.not_before_date
 	}
 }
+
+mod clusions;
+pub use clusions::*;
 
 mod date_extraction;
 pub use date_extraction::*;
