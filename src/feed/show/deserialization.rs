@@ -43,7 +43,7 @@ impl<'de> Visitor<'de> for ShowVisitor {
 					show_builder.not_before_date(map.next_value::<Option<_>>()?);
 				}
 				Field::InclusionPatterns | Field::ExclusionPatterns => {
-					if show_builder.raw_clusions.is_some() {
+					if show_builder.has_raw_clusions() {
 						return Err(de::Error::duplicate_field(
 							"InclusionPatterns or ExclusionPatterns",
 						));

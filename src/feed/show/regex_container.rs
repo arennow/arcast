@@ -12,17 +12,17 @@ pub struct RegexContainer {
 
 impl From<&Show> for RegexContainer {
 	fn from(show: &Show) -> Self {
-		let escaped_show_title = regex::escape(&show.title);
+		let escaped_show_title = regex::escape(show.title());
 
 		RegexContainer {
 			leading_show_title_strip: Regex::new(&format!(r#"{}[:\s]+"#, escaped_show_title))
 				.unwrap(),
 			custom_episode_title_strips: show
-				.title_strip_patterns
+				.title_strip_patterns()
 				.iter()
 				.map(|raw_str| RegexContainer::compile_pattern(raw_str))
 				.collect(),
-			clusions: show.raw_clusions.as_ref().map(|c| {
+			clusions: show.raw_clusions().as_ref().map(|c| {
 				c.map(|e| {
 					e.iter()
 						.map(|s| RegexContainer::compile_pattern(s))
