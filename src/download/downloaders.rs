@@ -24,7 +24,7 @@ where
 	let dest_path = dest_path.as_ref();
 	let (mut downloader, content_length) = download_to_reader(source_url)?;
 
-	let mut file = std::fs::File::create(&dest_path)
+	let mut file = std::fs::File::create(dest_path)
 		.map_err(|e| FilesystemError::from_io_error(e, dest_path.to_string_lossy()))?;
 
 	fn us_div(num: usize, den: Option<usize>) -> f64 {

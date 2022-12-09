@@ -6,7 +6,7 @@ use regex::Regex;
 use serde::Deserialize;
 use std::rc::Rc;
 
-#[derive(Deserialize, Debug, Getters, Builder)]
+#[derive(Deserialize, Clone, Debug, Getters, Builder)]
 #[builder(setter(into), pattern = "owned")]
 pub struct DateExtraction {
 	format: DateFormat,
@@ -29,12 +29,9 @@ impl DateExtraction {
 	}
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Clone)]
 pub enum Clusions<T> {
-	#[serde(rename = "inclusionPatterns")]
 	Inclusion(Vec<T>),
-
-	#[serde(rename = "exclusionPatterns")]
 	Exclusion(Vec<T>),
 }
 
@@ -51,27 +48,25 @@ impl<T> Clusions<T> {
 	}
 }
 
-#[derive(Deserialize, Debug, Builder)]
-#[builder(setter(into), pattern = "owned")]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Builder)]
+#[builder(setter(into))]
 pub struct Show {
 	title: String,
 	url: String,
 
-	#[serde(default)]
+	#[builder(default)]
 	title_strip_patterns: Vec<String>,
 
-	#[serde(skip, default)]
 	#[builder(default)]
 	regex_container: Cache<RegexContainer>,
 
+	#[builder(default)]
 	date_extraction: Option<DateExtraction>,
 
-	#[serde(flatten)]
 	#[builder(default)]
 	raw_clusions: Option<Clusions<String>>,
 
-	#[serde(rename = "notBefore")]
+	#[builder(default)]
 	not_before_date: Option<NaiveDate>,
 }
 
@@ -139,6 +134,8 @@ impl RegexContainer {
 		self.custom_episode_title_strips.is_empty() && self.clusions.is_none()
 	}
 }
+
+mod deserialization;
 
 #[cfg(test)]
 mod tests;

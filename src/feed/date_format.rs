@@ -5,7 +5,7 @@ use std::ops::Deref;
 use std::ops::Range;
 use std::str::FromStr;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum RefOrNot<'a, T> {
 	Owned(T),
 	Borrowed(&'a T),
@@ -141,7 +141,7 @@ mod tests {
 	}
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DateExtractor<'a> {
 	format: DateFormat,
 	composed_pattern: RefOrNot<'a, Regex>,
