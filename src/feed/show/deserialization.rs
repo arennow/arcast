@@ -1,7 +1,7 @@
 use super::{Clusions, Show, ShowBuilder, TitleHandling};
 use serde::{de, de::Visitor, Deserialize};
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 #[serde(field_identifier, rename_all = "camelCase")]
 enum Field {
 	Title,
@@ -11,6 +11,36 @@ enum Field {
 	InclusionPatterns,
 	ExclusionPatterns,
 	NotBefore,
+}
+
+fn assert_empty<'de, A: serde::de::MapAccess<'de>>(
+	has_val: bool,
+	fields: &[Field],
+) -> Result<(), A::Error> {
+	if !has_val {
+		return Ok(());
+	}
+
+	let joined_fields = {
+		let fields_count = fields.len();
+
+		let mut joined_fields = String::new();
+
+		for (i, field) in fields.iter().enumerate() {
+			joined_fields.push_str(&format!("'{field:?}'"));
+			joined_fields.push_str(match fields_count - i {
+				1 => "",
+				2 => " or ",
+				_ => ", ",
+			});
+		}
+
+		joined_fields
+	};
+
+	Err(de::Error::custom(format!(
+		"Only one of {joined_fields} is allowed at a time"
+	)))
 }
 
 struct ShowVisitor;
@@ -43,21 +73,20 @@ impl<'de> Visitor<'de> for ShowVisitor {
 					show_builder.not_before_date(map.next_value::<Option<_>>()?);
 				}
 				Field::InclusionPatterns | Field::ExclusionPatterns => {
-					if show_builder.has_raw_clusions() {
-						return Err(de::Error::duplicate_field(
-							"InclusionPatterns or ExclusionPatterns",
-						));
-					} else {
-						let inside = map.next_value::<Vec<String>>()?;
+					assert_empty::<A>(
+						show_builder.has_raw_clusions(),
+						&[Field::InclusionPatterns, Field::ExclusionPatterns],
+					)?;
 
-						let clus = match key {
-							Field::InclusionPatterns => Clusions::Inclusion(inside),
-							Field::ExclusionPatterns => Clusions::Exclusion(inside),
-							_ => unreachable!("the outer match should've prevented this"),
-						};
+					let inside = map.next_value::<Vec<String>>()?;
 
-						show_builder.raw_clusions(Some(dbg!(clus)));
-					}
+					let clus = match key {
+						Field::InclusionPatterns => Clusions::Inclusion(inside),
+						Field::ExclusionPatterns => Clusions::Exclusion(inside),
+						_ => unreachable!("the outer match should've prevented this"),
+					};
+
+					show_builder.raw_clusions(Some(clus));
 				}
 			};
 		}
