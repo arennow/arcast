@@ -142,7 +142,7 @@ impl Episode {
 mod tests {
 	use super::super::{DateFormat, ShowBuilder};
 	use super::*;
-	use crate::feed::DateExtractionBuilder;
+	use crate::feed::{DateExtractionBuilder, TitleHandling};
 
 	fn new_show(strip_patterns: Vec<&str>, date_format: Option<DateFormat>) -> Show {
 		let de = date_format.map(|form| {
@@ -156,12 +156,7 @@ mod tests {
 		ShowBuilder::default()
 			.title("FAKESHOW")
 			.url("http://example.com/feed.rss")
-			.title_strip_patterns(
-				strip_patterns
-					.into_iter()
-					.map(std::convert::Into::into)
-					.collect::<Vec<String>>(),
-			)
+			.title_handling(TitleHandling::from_strip_patterns(strip_patterns))
 			.date_extraction(de)
 			.not_before_date(None)
 			.build()

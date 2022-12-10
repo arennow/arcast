@@ -1,4 +1,4 @@
-use super::{Clusions, Show, ShowBuilder};
+use super::{Clusions, Show, ShowBuilder, TitleHandling};
 use serde::{de, de::Visitor, Deserialize};
 
 #[derive(Deserialize)]
@@ -6,8 +6,8 @@ use serde::{de, de::Visitor, Deserialize};
 enum Field {
 	Title,
 	Url,
-	TitleStripPatterns,
 	DateExtraction,
+	TitleStripPatterns,
 	InclusionPatterns,
 	ExclusionPatterns,
 	NotBefore,
@@ -33,11 +33,11 @@ impl<'de> Visitor<'de> for ShowVisitor {
 				Field::Url => {
 					show_builder.url(map.next_value::<String>()?);
 				}
-				Field::TitleStripPatterns => {
-					show_builder.title_strip_patterns(map.next_value::<Vec<_>>()?);
-				}
 				Field::DateExtraction => {
 					show_builder.date_extraction(map.next_value::<Option<_>>()?);
+				}
+				Field::TitleStripPatterns => {
+					show_builder.title_handling(TitleHandling::StripPatterns(map.next_value()?));
 				}
 				Field::NotBefore => {
 					show_builder.not_before_date(map.next_value::<Option<_>>()?);

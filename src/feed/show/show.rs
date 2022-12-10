@@ -1,4 +1,4 @@
-use super::{Clusions, DateExtraction, RegexContainer};
+use super::{Clusions, DateExtraction, RegexContainer, TitleHandling};
 use crate::{cache::Cache, feed::DateExtractor};
 use chrono::NaiveDate;
 use derive_builder::Builder;
@@ -13,7 +13,8 @@ pub struct Show {
 	url: String,
 
 	#[builder(default)]
-	title_strip_patterns: Vec<String>,
+	#[getset(skip)]
+	title_handling: Option<TitleHandling>,
 
 	#[builder(default)]
 	#[getset(skip)]
@@ -32,6 +33,16 @@ pub struct Show {
 }
 
 impl Show {
+	pub fn title_handling(&self) -> Option<&TitleHandling> {
+		self.title_handling.as_ref()
+	}
+
+	#[cfg(test)]
+	pub fn title_strip_patterns(&self) -> Option<&[String]> {
+		self.title_handling()
+			.and_then(TitleHandling::strip_patterns)
+	}
+
 	pub fn regex_container(&self) -> Rc<RegexContainer> {
 		self.regex_container.get(|| RegexContainer::from(self))
 	}

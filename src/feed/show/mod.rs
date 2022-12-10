@@ -13,5 +13,8 @@ pub use regex_container::*;
 mod show;
 pub use show::*;
 
+mod title_handling;
+pub use title_handling::*;
+
 #[cfg(test)]
 mod tests;
