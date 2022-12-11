@@ -1,5 +1,5 @@
 use super::Show;
-use crate::feed::{Clusions, DateFormat};
+use crate::feed::{Clusions, DateFormat, TitleHandling};
 use chrono::NaiveDate;
 use std::error::Error;
 
@@ -72,6 +72,47 @@ fn test_parse_with_title_strip_pattern() -> Result<(), Box<dyn Error>> {
 	);
 	assert!(show.date_extraction().is_none());
 	assert!(show.not_before_date().is_none());
+
+	Ok(())
+}
+
+#[test]
+fn test_parse_strip_whole_title() -> Result<(), Box<dyn Error>> {
+	let json = r#"
+		{
+			"title": "Hard Pod",
+			"url": "https://example.com/hardpod.xml",
+			"stripWholeTitle": true
+		}
+		"#;
+
+	let show: Show = serde_json::from_str(json)?;
+	assert_eq!(show.title(), "Hard Pod");
+	assert_eq!(show.url(), "https://example.com/hardpod.xml");
+	assert!(show.title_strip_patterns().is_none());
+	assert!(matches!(show.title_handling(), TitleHandling::StripAll));
+	assert!(show.regex_container().has_only_default_title_strip());
+	assert!(show.date_extraction().is_none());
+	assert!(show.not_before_date().is_none());
+
+	Ok(())
+}
+
+#[test]
+fn test_parse_conflicting_title_handling() -> Result<(), Box<dyn Error>> {
+	let json = r#"
+		{
+			"title": "Hard Pod",
+			"url": "https://example.com/hardpod.xml",
+			"titleStripPatterns": ["\\s*Episode\\s*\\d+:\\s*"],
+			"stripWholeTitle": true
+		}
+		"#;
+
+	assert!(matches!(
+		serde_json::from_str(json),
+		Result::<Show, _>::Err(_)
+	));
 
 	Ok(())
 }

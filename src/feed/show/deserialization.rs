@@ -7,6 +7,7 @@ enum Field {
 	Title,
 	Url,
 	DateExtraction,
+	StripWholeTitle,
 	TitleStripPatterns,
 	InclusionPatterns,
 	ExclusionPatterns,
@@ -66,7 +67,21 @@ impl<'de> Visitor<'de> for ShowVisitor {
 				Field::DateExtraction => {
 					show_builder.date_extraction(map.next_value::<Option<_>>()?);
 				}
+				Field::StripWholeTitle => {
+					assert_empty::<A>(
+						show_builder.has_title_handling(),
+						&[Field::StripWholeTitle, Field::TitleStripPatterns],
+					)?;
+
+					if map.next_value()? {
+						show_builder.title_handling(TitleHandling::StripAll);
+					}
+				}
 				Field::TitleStripPatterns => {
+					assert_empty::<A>(
+						show_builder.has_title_handling(),
+						&[Field::StripWholeTitle, Field::TitleStripPatterns],
+					)?;
 					show_builder.title_handling(TitleHandling::StripPatterns(map.next_value()?));
 				}
 				Field::NotBefore => {

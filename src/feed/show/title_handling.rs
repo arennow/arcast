@@ -1,7 +1,7 @@
 #[derive(Debug, Clone)]
 pub enum TitleHandling {
 	StripPatterns(Vec<String>),
-	// StripAll,
+	StripAll,
 }
 
 impl Default for TitleHandling {
@@ -25,7 +25,7 @@ impl TitleHandling {
 					Some(v)
 				}
 			}
-			// Self::StripAll => None,
+			Self::StripAll => None,
 		}
 	}
 }

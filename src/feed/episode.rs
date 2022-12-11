@@ -1,4 +1,4 @@
-use super::{error::*, RegexContainer, Show};
+use super::{error::*, RegexContainer, Show, TitleHandling};
 use chrono::prelude::*;
 use getset::Getters;
 use regex::Regex;
@@ -44,7 +44,13 @@ impl Episode {
 				title.to_mut().replace_range(range, "");
 			}
 		}
-		let title = Self::process_raw_title(title, show.regex_container());
+
+		let title: Option<String> = match show.title_handling() {
+			TitleHandling::StripPatterns(_) => {
+				Some(Self::process_raw_title(title, show.regex_container()))
+			}
+			TitleHandling::StripAll => None,
+		};
 
 		let enclosure_url: String = rss_item
 			.enclosure()
@@ -54,7 +60,7 @@ impl Episode {
 
 		let filename_extension = Self::get_enclosure_extension(&enclosure_url);
 		let (filename, episode_name_range) =
-			Self::generate_filename(show, pub_date, &title, filename_extension);
+			Self::generate_filename(show, pub_date, title, filename_extension);
 
 		Ok(Episode {
 			enclosure_url,
@@ -77,16 +83,26 @@ impl Episode {
 	fn generate_filename(
 		show: &Show,
 		pub_date: NaiveDate,
-		title: &str,
+		title: Option<impl AsRef<str>>,
 		extension: &str,
 	) -> (String, Range<usize>) {
-		let filename = format!(
-			"{} - {} - {}.{}",
-			show.title(),
-			Self::formatted_string_for_date(pub_date),
-			title,
-			extension
-		);
+		#![allow(clippy::option_if_let_else)]
+		let filename = if let Some(title) = title {
+			format!(
+				"{} - {} - {}.{}",
+				show.title(),
+				Self::formatted_string_for_date(pub_date),
+				title.as_ref(),
+				extension
+			)
+		} else {
+			format!(
+				"{} - {}.{}",
+				show.title(),
+				Self::formatted_string_for_date(pub_date),
+				extension
+			)
+		};
 
 		let name_end_index = filename.len() - (extension.len() + 1); // +1 for the .
 
@@ -97,7 +113,7 @@ impl Episode {
 		raw_title: impl Into<String>,
 		regex_cont: impl Deref<Target = RegexContainer>,
 	) -> String {
-		let default_patterns = [regex_cont.leading_show_title_strip(), &*EDGE_TRIM_REGEX];
+		let default_patterns = [regex_cont.leading_show_title_strip(), &EDGE_TRIM_REGEX];
 		let custom_patterns = regex_cont.custom_episode_title_strips().iter();
 
 		let strip_patterns = default_patterns.into_iter().chain(custom_patterns);
@@ -199,7 +215,7 @@ mod tests {
 		let pub_date = NaiveDate::from_ymd(2021, 2, 21);
 
 		let (filename, ep_name_range) =
-			Episode::generate_filename(&show, pub_date, "This Great Ep!", "wavefile");
+			Episode::generate_filename(&show, pub_date, Some("This Great Ep!"), "wavefile");
 
 		let ep = EpisodeBuilder::default()
 			.enclosure_url("https://example.com/file.mp3")
@@ -212,6 +228,15 @@ mod tests {
 		assert_eq!(filename, "FAKESHOW - 2021-02-21 - This Great Ep!.wavefile");
 		assert_eq!(ep_name_range, 0..38);
 		assert_eq!(ep.episode_name(), "FAKESHOW - 2021-02-21 - This Great Ep!");
+	}
+
+	#[test]
+	fn test_generate_filename_with_whole_title_strip() {
+		let show = new_show(vec![], None);
+		let pub_date = NaiveDate::from_ymd(2021, 2, 21);
+		let (filename, _) = Episode::generate_filename(&show, pub_date, None::<&str>, "wavefile");
+
+		assert_eq!(filename, "FAKESHOW - 2021-02-21.wavefile");
 	}
 
 	#[test]

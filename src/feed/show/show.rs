@@ -52,4 +52,8 @@ impl ShowBuilder {
 	pub fn has_raw_clusions(&self) -> bool {
 		self.raw_clusions.is_some()
 	}
+
+	pub fn has_title_handling(&self) -> bool {
+		self.title_handling.is_some()
+	}
 }
