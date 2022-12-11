@@ -1,4 +1,4 @@
-use super::{Clusions, Show, TitleHandling};
+use super::{Clusions, Show};
 use getset::Getters;
 use regex::Regex;
 
@@ -18,7 +18,7 @@ impl From<&Show> for RegexContainer {
 
 		let custom_episode_title_strips = show
 			.title_handling()
-			.and_then(TitleHandling::strip_patterns)
+			.strip_patterns()
 			.map(|patterns| {
 				patterns
 					.iter()

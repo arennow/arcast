@@ -13,8 +13,7 @@ pub struct Show {
 	url: String,
 
 	#[builder(default)]
-	#[getset(skip)]
-	title_handling: Option<TitleHandling>,
+	title_handling: TitleHandling,
 
 	#[builder(default)]
 	#[getset(skip)]
@@ -33,14 +32,9 @@ pub struct Show {
 }
 
 impl Show {
-	pub fn title_handling(&self) -> Option<&TitleHandling> {
-		self.title_handling.as_ref()
-	}
-
 	#[cfg(test)]
 	pub fn title_strip_patterns(&self) -> Option<&[String]> {
-		self.title_handling()
-			.and_then(TitleHandling::strip_patterns)
+		self.title_handling().strip_patterns()
 	}
 
 	pub fn regex_container(&self) -> Rc<RegexContainer> {

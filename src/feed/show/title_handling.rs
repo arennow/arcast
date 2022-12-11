@@ -4,6 +4,12 @@ pub enum TitleHandling {
 	// StripAll,
 }
 
+impl Default for TitleHandling {
+	fn default() -> Self {
+		Self::StripPatterns(Vec::default())
+	}
+}
+
 impl TitleHandling {
 	#[cfg(test)]
 	pub fn from_strip_patterns(patterns: impl IntoIterator<Item = impl Into<String>>) -> Self {
@@ -12,7 +18,13 @@ impl TitleHandling {
 
 	pub fn strip_patterns(&self) -> Option<&[String]> {
 		match self {
-			Self::StripPatterns(v) => Some(v),
+			Self::StripPatterns(v) => {
+				if v.is_empty() {
+					None
+				} else {
+					Some(v)
+				}
+			}
 			// Self::StripAll => None,
 		}
 	}
