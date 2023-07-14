@@ -86,22 +86,24 @@ impl Episode {
 		title: Option<impl AsRef<str>>,
 		extension: &str,
 	) -> (String, Range<usize>) {
-		#![allow(clippy::option_if_let_else)]
-		let filename = if let Some(title) = title {
-			format!(
-				"{} - {} - {}.{}",
-				show.title(),
-				Self::formatted_string_for_date(pub_date),
-				title.as_ref(),
-				extension
-			)
-		} else {
-			format!(
-				"{} - {}.{}",
-				show.title(),
-				Self::formatted_string_for_date(pub_date),
-				extension
-			)
+		let filename = match title {
+			Some(title) if !title.as_ref().is_empty() => {
+				format!(
+					"{} - {} - {}.{}",
+					show.title(),
+					Self::formatted_string_for_date(pub_date),
+					title.as_ref(),
+					extension
+				)
+			}
+			_ => {
+				format!(
+					"{} - {}.{}",
+					show.title(),
+					Self::formatted_string_for_date(pub_date),
+					extension
+				)
+			}
 		};
 
 		let name_end_index = filename.len() - (extension.len() + 1); // +1 for the .
@@ -231,10 +233,19 @@ mod tests {
 	}
 
 	#[test]
-	fn test_generate_filename_with_whole_title_strip() {
+	fn test_generate_filename_with_missing_title() {
 		let show = new_show(vec![], None);
 		let pub_date = NaiveDate::from_ymd(2021, 2, 21);
 		let (filename, _) = Episode::generate_filename(&show, pub_date, None::<&str>, "wavefile");
+
+		assert_eq!(filename, "FAKESHOW - 2021-02-21.wavefile");
+	}
+
+	#[test]
+	fn test_generate_filename_with_empty_title() {
+		let show = new_show(vec![], None);
+		let pub_date = NaiveDate::from_ymd(2021, 2, 21);
+		let (filename, _) = Episode::generate_filename(&show, pub_date, Some(""), "wavefile");
 
 		assert_eq!(filename, "FAKESHOW - 2021-02-21.wavefile");
 	}
