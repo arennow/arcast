@@ -110,14 +110,14 @@ mod tests {
 			.extract_date("FAKESHOW - 7/4/19 - How to raise the dead")
 			.unwrap();
 
-		assert_eq!(date, NaiveDate::from_ymd(2019, 7, 4));
+		assert_eq!(date, NaiveDate::from_ymd_opt(2019, 7, 4).unwrap());
 		assert_eq!(range, 11..17);
 
 		let (date, range) = extractor
 			.extract_date("FAKESHOW - 07/04/2019 - How to raise the dead")
 			.unwrap();
 
-		assert_eq!(date, NaiveDate::from_ymd(2019, 7, 4));
+		assert_eq!(date, NaiveDate::from_ymd_opt(2019, 7, 4).unwrap());
 		assert_eq!(range, 11..21);
 	}
 
@@ -129,14 +129,14 @@ mod tests {
 			.extract_date("FAKESHOW - 7/4/19 - How to raise the dead")
 			.unwrap();
 
-		assert_eq!(date, NaiveDate::from_ymd(2019, 7, 4));
+		assert_eq!(date, NaiveDate::from_ymd_opt(2019, 7, 4).unwrap());
 		assert_eq!(range, 8..20);
 
 		let (date, range) = extractor
 			.extract_date("FAKESHOW - 07/04/2019 - How to raise the dead")
 			.unwrap();
 
-		assert_eq!(date, NaiveDate::from_ymd(2019, 7, 4));
+		assert_eq!(date, NaiveDate::from_ymd_opt(2019, 7, 4).unwrap());
 		assert_eq!(range, 8..24);
 	}
 }

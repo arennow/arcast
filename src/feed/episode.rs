@@ -214,7 +214,7 @@ mod tests {
 	fn test_generate_filename() {
 		let show = new_show(vec![], None);
 
-		let pub_date = NaiveDate::from_ymd(2021, 2, 21);
+		let pub_date = NaiveDate::from_ymd_opt(2021, 2, 21).unwrap();
 
 		let (filename, ep_name_range) =
 			Episode::generate_filename(&show, pub_date, Some("This Great Ep!"), "wavefile");
@@ -235,7 +235,7 @@ mod tests {
 	#[test]
 	fn test_generate_filename_with_missing_title() {
 		let show = new_show(vec![], None);
-		let pub_date = NaiveDate::from_ymd(2021, 2, 21);
+		let pub_date = NaiveDate::from_ymd_opt(2021, 2, 21).unwrap();
 		let (filename, _) = Episode::generate_filename(&show, pub_date, None::<&str>, "wavefile");
 
 		assert_eq!(filename, "FAKESHOW - 2021-02-21.wavefile");
@@ -244,7 +244,7 @@ mod tests {
 	#[test]
 	fn test_generate_filename_with_empty_title() {
 		let show = new_show(vec![], None);
-		let pub_date = NaiveDate::from_ymd(2021, 2, 21);
+		let pub_date = NaiveDate::from_ymd_opt(2021, 2, 21).unwrap();
 		let (filename, _) = Episode::generate_filename(&show, pub_date, Some(""), "wavefile");
 
 		assert_eq!(filename, "FAKESHOW - 2021-02-21.wavefile");
