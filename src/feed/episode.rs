@@ -256,15 +256,13 @@ mod tests {
 
 		let enclosure = rss::EnclosureBuilder::default()
 			.url("https://example.com/file.mp3")
-			.build()
-			.unwrap();
+			.build();
 
 		let item = rss::ItemBuilder::default()
 			.pub_date(Some("01 Jun 2016 14:31:46 -0700".into()))
 			.title(Some("1/2/03 - Full Show".into()))
 			.enclosure(Some(enclosure))
-			.build()
-			.unwrap();
+			.build();
 
 		let ep = Episode::new(&show, &item).unwrap();
 
