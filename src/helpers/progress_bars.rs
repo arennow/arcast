@@ -1,6 +1,8 @@
 use progressing::clamping::Bar;
 use progressing::Baring;
 
+/// These are counts of `char`s, not bytes
+/// That is, they're indices into `str.chars()`, not indices to slice `str`
 struct BarSizes {
 	title: u16,
 	bar: u16,
@@ -41,7 +43,7 @@ impl<'a> TitledBar<'a> {
 	}
 
 	fn width_of_title(title: &str, full_width: u16) -> u16 {
-		let title_len = title.len() as f32 as u16; // Casting through float causes a saturating cast
+		let title_len = title.chars().count() as f32 as u16; // Casting through float causes a saturating cast
 
 		title_len.min(full_width / 2)
 	}
@@ -65,7 +67,7 @@ impl<'a> TitledBar<'a> {
 impl<'a> std::fmt::Display for TitledBar<'a> {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
 		let title_width = self.sizes.title as usize;
-		let sub_title = &self.title[..title_width];
+		let sub_title: String = self.title.chars().take(title_width).collect();
 		let percent = self.percent_string();
 
 		write!(f, "{} {} {}", sub_title, self.bar, percent)
