@@ -12,6 +12,7 @@ rss = "2"
 chrono = { version = "0.4.19", default-features = false, features = [ # Disabling default features removes the dependency on the deprecated version of the `time` library
 	"std",
 	"serde",
+	"clock",
 ] }
 structopt = "0.3.22"
 serde = { version = "1", features = ["derive"] }
