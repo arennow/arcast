@@ -19,10 +19,10 @@ mod feed;
 mod filesystem;
 mod helpers;
 
-use structopt::StructOpt;
+use clap::Parser;
 
 fn do_work() -> Result<(), Box<dyn std::error::Error>> {
-	let config = config::Config::from_args();
+	let config = config::Config::parse();
 	let show: feed::Show = {
 		let config_file_path_string = config.config_file_path().to_string_lossy();
 		let config_file_handle =

@@ -1,27 +1,27 @@
-use structopt::StructOpt;
-
+use clap::Parser;
 use std::path::{Path, PathBuf};
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
+#[command(version)]
 pub struct Config {
 	/// Download directory path
-	#[structopt(short, long)]
+	#[arg(short, long)]
 	destination: PathBuf,
 
 	/// Path to configuration file
-	#[structopt(short, long)]
+	#[arg(short, long)]
 	config_file_path: PathBuf,
 
 	/// Pretend (don't download anything)
-	#[structopt(short, long)]
+	#[arg(short, long)]
 	pretend: bool,
 
 	/// Print existing episodes
-	#[structopt(short = "e", long)]
+	#[arg(short = 'e', long)]
 	print_existing_episodes: bool,
 
 	/// Limit number of episodes
-	#[structopt(short, long)]
+	#[arg(short, long)]
 	number_to_download: Option<usize>,
 }
 
