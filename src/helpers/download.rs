@@ -51,6 +51,7 @@ pub fn download_episode(
 			Box::new(move |prog: f64| {
 				bar.set(prog);
 				let _ = write!(stdout, "\r{}", bar);
+				let _ = stdout.flush();
 			})
 		} else {
 			Box::new(|_| {})
