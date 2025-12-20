@@ -4,14 +4,14 @@ use thiserror::Error;
 #[derive(Error, Debug)]
 pub enum DownloadError {
 	#[error(transparent)]
-	NetworkConnection(#[from] ureq::Error),
+	NetworkConnection(#[from] reqwest::Error),
 
 	#[error(transparent)]
 	Filesystem(#[from] crate::filesystem::FilesystemError),
 }
 
-impl From<ureq::Error> for Box<DownloadError> {
-	fn from(src: ureq::Error) -> Self {
+impl From<reqwest::Error> for Box<DownloadError> {
+	fn from(src: reqwest::Error) -> Self {
 		Box::new(From::from(src))
 	}
 }

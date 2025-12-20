@@ -7,18 +7,14 @@ use std::path::Path;
 pub fn download_to_reader(
 	source_url: &str,
 ) -> Result<(impl Read, Option<usize>), Box<DownloadError>> {
-	let agent: ureq::Agent = ureq::Agent::config_builder()
-		.max_redirects(10)
-		.build()
-		.into();
-	let resp = agent.get(source_url).call()?;
-	let (parts, body) = resp.into_parts();
-	let content_length = parts
-		.headers
-		.get("content-length")
-		.and_then(|value| value.to_str().ok())
-		.and_then(|s| s.parse().ok());
-	Ok((body.into_reader(), content_length))
+	let client = reqwest::blocking::Client::builder()
+		.redirect(reqwest::redirect::Policy::limited(20))
+		.build()?;
+	let response = client.get(source_url).send()?;
+	let content_length = response
+		.content_length()
+		.and_then(|len| usize::try_from(len).ok());
+	Ok((response, content_length))
 }
 
 pub fn download_to_file<P: AsRef<Path>, PF>(
@@ -59,7 +55,7 @@ where
 	let mut dest = BufWriter::new(dest);
 	let mut bytes_written = 0;
 	let mut buf = HeapBuffer::<{ 1024 * 8 }>::new();
-	// 8 KiB is the size of the BufWriter buffer and is also seemingly what we get from ureq's result reader
+	// 8 KiB is the size of the BufWriter buffer
 	// So I guess this function allocates 16 KiB of buffers?
 
 	FilesystemError::handling_io_error_in(dest_name, || {
