@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-ureq = "2"
+ureq = "3"
 thiserror = "1"
 rss = "2"
 chrono = { version = "0.4.19", default-features = false, features = [ # Disabling default features removes the dependency on the deprecated version of the `time` library

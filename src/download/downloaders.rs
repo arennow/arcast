@@ -7,10 +7,18 @@ use std::path::Path;
 pub fn download_to_reader(
 	source_url: &str,
 ) -> Result<(impl Read, Option<usize>), Box<DownloadError>> {
-	let agent = ureq::AgentBuilder::new().redirects(10).build();
+	let agent: ureq::Agent = ureq::Agent::config_builder()
+		.max_redirects(10)
+		.build()
+		.into();
 	let resp = agent.get(source_url).call()?;
-	let content_length = resp.header("Content-Length").and_then(|s| s.parse().ok());
-	Ok((resp.into_reader(), content_length))
+	let (parts, body) = resp.into_parts();
+	let content_length = parts
+		.headers
+		.get("content-length")
+		.and_then(|value| value.to_str().ok())
+		.and_then(|s| s.parse().ok());
+	Ok((body.into_reader(), content_length))
 }
 
 pub fn download_to_file<P: AsRef<Path>, PF>(
