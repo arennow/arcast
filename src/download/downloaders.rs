@@ -9,6 +9,7 @@ pub fn download_to_reader(
 ) -> Result<(impl Read, Option<usize>), Box<DownloadError>> {
 	let client = reqwest::blocking::Client::builder()
 		.redirect(reqwest::redirect::Policy::limited(20))
+		.user_agent("Podcasts/54321")
 		.build()?;
 	let response = client.get(source_url).send()?;
 	let content_length = response
