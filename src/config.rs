@@ -12,7 +12,7 @@ pub struct Config {
 	#[arg(short, long)]
 	config_file_path: PathBuf,
 
-	/// Pretend (don't download anything)
+	/// Pretend (don't download or delete anything)
 	#[arg(short, long)]
 	pretend: bool,
 
@@ -23,6 +23,14 @@ pub struct Config {
 	/// Limit number of episodes
 	#[arg(short, long)]
 	number_to_download: Option<usize>,
+
+	/// Remove files in the destination directory that are byte-for-byte duplicates of a
+	/// current-feed episode but whose filename is not what the feed would produce today.
+	/// (Respects --pretend)
+	// The motivating case: an episode originally downloaded as "X" that was later renamed
+	// to "Y" in the feed. Running with this flag removes the stale "X" copy.
+	#[arg(long)]
+	prune_renamed_duplicates: bool,
 }
 
 impl Config {
@@ -44,5 +52,9 @@ impl Config {
 
 	pub fn number_to_download(&self) -> usize {
 		self.number_to_download.unwrap_or(usize::MAX)
+	}
+
+	pub fn prune_renamed_duplicates(&self) -> bool {
+		self.prune_renamed_duplicates
 	}
 }

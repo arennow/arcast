@@ -7,4 +7,7 @@ pub use controller::*;
 mod download;
 pub use download::*;
 
+mod prune;
+pub use prune::*;
+
 mod progress_bars;

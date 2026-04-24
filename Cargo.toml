@@ -24,3 +24,8 @@ terminal_size = "0.1.17"
 termion = "1"
 getset = "0.1.2"
 clap = { version = "4", features = ["derive"] }
+sha2 = "0.10"
+rayon = "1"
+
+[dev-dependencies]
+tempfile = "3"

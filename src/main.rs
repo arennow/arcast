@@ -38,6 +38,22 @@ fn do_work() -> Result<(), Box<dyn std::error::Error>> {
 	let classified_eps = helpers::classified_episodes(&show, &episodes, &config)?;
 
 	helpers::process_classified_episodes(classified_eps, &config)?;
+
+	if config.prune_renamed_duplicates() {
+		let canonical_filenames: std::collections::HashSet<String> =
+			episodes.iter().map(|e| e.filename().to_owned()).collect();
+		let to_prune = helpers::find_files_to_prune(config.destination(), &canonical_filenames)?;
+		for path in to_prune {
+			if config.pretend() {
+				println!("{} would be removed (renamed duplicate)", path.display());
+			} else {
+				filesystem::FilesystemError::handling_io_error_in(path.to_string_lossy(), || {
+					std::fs::remove_file(&path)
+				})?;
+			}
+		}
+	}
+
 	Ok(())
 }
 
