@@ -13,6 +13,8 @@ lazy_static! {
 		[("\u{a0}", " ")]; // nbsp -> regular space
 }
 
+const MAX_FILENAME_BYTES: usize = 255;
+
 #[derive(Builder, Getters, Debug)]
 #[builder(setter(into), pattern = "owned")]
 #[get = "pub"]
@@ -106,9 +108,50 @@ impl Episode {
 			}
 		};
 
-		let name_end_index = filename.len() - (extension.len() + 1); // +1 for the .
+		let filename = Self::truncate_filename_to_max_bytes(filename, MAX_FILENAME_BYTES);
+
+		let name_end_index = filename.rfind('.').unwrap_or(filename.len());
 
 		(filename, 0..name_end_index)
+	}
+
+	fn truncate_filename_to_max_bytes(filename: String, max_bytes: usize) -> String {
+		if filename.len() <= max_bytes {
+			return filename;
+		}
+
+		let Some(extension_start) = filename.rfind('.') else {
+			return Self::truncate_str_to_max_bytes(&filename, max_bytes).to_owned();
+		};
+
+		let extension = &filename[extension_start..];
+		if extension.len() >= max_bytes {
+			// Preserve extension even if this pathological case exceeds a typical
+			// filesystem component limit; truncating the extension is not allowed.
+			return extension.to_owned();
+		}
+
+		let allowed_stem_bytes = max_bytes - extension.len();
+		let stem = &filename[..extension_start];
+		let truncated_stem = Self::truncate_str_to_max_bytes(stem, allowed_stem_bytes);
+
+		format!("{}{}", truncated_stem, extension)
+	}
+
+	fn truncate_str_to_max_bytes(content: &str, max_bytes: usize) -> &str {
+		if content.len() <= max_bytes {
+			return content;
+		}
+
+		let mut cut_index = 0;
+		for (idx, ch) in content.char_indices() {
+			if idx + ch.len_utf8() > max_bytes {
+				break;
+			}
+			cut_index = idx + ch.len_utf8();
+		}
+
+		&content[..cut_index]
 	}
 
 	fn process_raw_title(
@@ -248,6 +291,47 @@ mod tests {
 		let (filename, _) = Episode::generate_filename(&show, pub_date, Some(""), "wavefile");
 
 		assert_eq!(filename, "FAKESHOW - 2021-02-21.wavefile");
+	}
+
+	#[test]
+	fn test_generate_filename_truncates_to_max_bytes() {
+		let show = new_show(vec![], None);
+		let pub_date = NaiveDate::from_ymd_opt(2021, 2, 21).unwrap();
+		let long_title = "A".repeat(1000);
+
+		let (filename, episode_name_range) =
+			Episode::generate_filename(&show, pub_date, Some(long_title), "mp3");
+
+		assert_eq!(filename.len(), MAX_FILENAME_BYTES);
+		assert!(filename.ends_with(".mp3"));
+		assert_eq!(episode_name_range.end, filename.len() - 4);
+		assert!(filename.starts_with("FAKESHOW - 2021-02-21 - "));
+	}
+
+	#[test]
+	fn test_generate_filename_truncates_on_utf8_boundary() {
+		let show = new_show(vec![], None);
+		let pub_date = NaiveDate::from_ymd_opt(2021, 2, 21).unwrap();
+		let long_title = "😀".repeat(1000);
+
+		let (filename, _) = Episode::generate_filename(&show, pub_date, Some(long_title), "mp3");
+
+		assert!(filename.len() <= MAX_FILENAME_BYTES);
+		assert!(filename.ends_with(".mp3"));
+		assert!(std::str::from_utf8(filename.as_bytes()).is_ok());
+	}
+
+	#[test]
+	fn test_generate_filename_always_preserves_extension() {
+		let show = new_show(vec![], None);
+		let pub_date = NaiveDate::from_ymd_opt(2021, 2, 21).unwrap();
+		let long_title = "B".repeat(1000);
+
+		let (filename, _) =
+			Episode::generate_filename(&show, pub_date, Some(long_title), "verylongextension");
+
+		assert!(filename.len() <= MAX_FILENAME_BYTES);
+		assert!(filename.ends_with(".verylongextension"));
 	}
 
 	#[test]
